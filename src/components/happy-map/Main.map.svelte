@@ -65,7 +65,7 @@
       wheelPxPerZoomLevel: 60
     });
 
-    L.tileLayer("/assets/tiles/{z}/{x}/{y}.png", {
+    L.tileLayer("assets/tiles/{z}/{x}/{y}.png", {
       tileSize: 256,
       minZoom: 0,
       maxZoom: 6,
