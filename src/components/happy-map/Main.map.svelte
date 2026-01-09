@@ -108,8 +108,8 @@
   async function loadData() {
     try {
       const [labelsRes, dotsRes] = await Promise.all([
-        fetch("/assets/labels.json"),
-        fetch("/assets/interaction.json")
+        fetch("assets/labels.json"),
+        fetch("assets/interaction.json")
       ]);
 
       allLabels = await labelsRes.json();
