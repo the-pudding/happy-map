@@ -144,9 +144,9 @@
     "city_count": 1561
   },
   {
-    "text": "Work Achievement",
-    "x": 0.4644410270754366,
-    "y": 0.6834847214443445,
+    "text": "Achievement",
+    "x": 0.4543,
+    "y": 0.7043,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -207,16 +207,16 @@
     "city_count": 1328
   },
   {
-    "text": "Pet Maintenance & Interaction",
-    "x": 0.6465547400125786,
-    "y": 0.35915497787336903,
+    "text": "Pets",
+    "x": 0.6577,
+    "y": 0.3489,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
     "city_count": 2027
   },
   {
-    "text": "Education Achievement",
+    "text": "Achievement",
     "x": 0.5722436606460857,
     "y": 0.7080417907947733,
     "type": "l2",
@@ -225,7 +225,7 @@
     "city_count": 1206
   },
   {
-    "text": "Education Experience",
+    "text": "Experience",
     "x": 0.551220847832633,
     "y": 0.6348161229950031,
     "type": "l2",
@@ -234,7 +234,7 @@
     "city_count": 582
   },
   {
-    "text": "Education Milestone",
+    "text": "Milestone",
     "x": 0.5145892966923766,
     "y": 0.6862054252231148,
     "type": "l2",
@@ -288,18 +288,18 @@
     "city_count": 1307
   },
   {
-    "text": "Entertainment Experience",
-    "x": 0.566559539146986,
-    "y": 0.20941439474335044,
+    "text": "Entertainment",
+        "x": 0.6023,
+    "y": 0.2014,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
     "city_count": 4213
   },
   {
-    "text": "Leisure Experience",
-    "x": 0.6079769369018109,
-    "y": 0.31633097196796667,
+    "text": "Leisure",
+        "x": 0.6033,
+    "y": 0.3032,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -343,8 +343,8 @@
   },
   {
     "text": "Personal Achievement",
-    "x": 0.7315649142727126,
-    "y": 0.6771126245141035,
+        "x": 0.7183,
+    "y": 0.6768,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -1207,8 +1207,8 @@
   },
   {
     "text": "Weather Enjoyment",
-    "x": 0.3569776771944026,
-    "y": 0.23469865104145737,
+        "x": 0.3408,
+    "y": 0.2524,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1225,8 +1225,8 @@
   },
   {
     "text": "Physical Relief & Comfort",
-    "x": 0.41021533247154734,
-    "y": 0.2973664152851607,
+        "x": 0.4025,
+    "y": 0.2991,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1243,8 +1243,8 @@
   },
   {
     "text": "Beverages",
-    "x": 0.5225831516132522,
-    "y": 0.21119265440293444,
+    "x": 0.5326,
+    "y": 0.2489,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1287,7 +1287,7 @@
     "city_count": 1981
   },
   {
-    "text": "Found Items & Discoveries",
+    "text": "Found Items<br>& Discoveries",
     "x": 0.1854456632957566,
     "y": 0.3153586525469434,
     "type": "l3",
@@ -1298,7 +1298,7 @@
   {
     "text": "Gifts & Kindness Received",
     "x": 0.14007379704917827,
-    "y": 0.21239396587445403,
+    "y": 0.19239396587445403,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1306,8 +1306,8 @@
   },
   {
     "text": "Luck & Fortuitous Events",
-    "x": 0.21475614692041992,
-    "y": 0.2273885790595619,
+    "x": 0.20475614692041992,
+    "y": 0.2473885790595619,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,

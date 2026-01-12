@@ -26,7 +26,10 @@
   function updateCompassViewport() {
     if (!map) return;
     const bounds = map.getBounds();
-    const mapBounds = [[0, 0], [-256, 256]];
+    const mapBounds = [
+      [0, 0],
+      [-256, 256]
+    ];
     const compassInnerSize = 140;
 
     const north = bounds.getNorth();
@@ -34,26 +37,54 @@
     const east = bounds.getEast();
     const west = bounds.getWest();
 
-    const leftPercent = (west - mapBounds[0][1]) / (mapBounds[1][1] - mapBounds[0][1]);
-    const rightPercent = (east - mapBounds[0][1]) / (mapBounds[1][1] - mapBounds[0][1]);
+    const leftPercent =
+      (west - mapBounds[0][1]) / (mapBounds[1][1] - mapBounds[0][1]);
+    const rightPercent =
+      (east - mapBounds[0][1]) / (mapBounds[1][1] - mapBounds[0][1]);
 
-    viewportLeft = Math.max(20, Math.min(160, leftPercent * compassInnerSize + 20));
-    const right = Math.max(20, Math.min(160, rightPercent * compassInnerSize + 20));
+    viewportLeft = Math.max(
+      20,
+      Math.min(160, leftPercent * compassInnerSize + 20)
+    );
+    const right = Math.max(
+      20,
+      Math.min(160, rightPercent * compassInnerSize + 20)
+    );
     viewportWidth = Math.max(5, right - viewportLeft);
 
-    const topPercent = (mapBounds[0][0] - north) / (mapBounds[0][0] - mapBounds[1][0]);
-    const bottomPercent = (mapBounds[0][0] - south) / (mapBounds[0][0] - mapBounds[1][0]);
+    const topPercent =
+      (mapBounds[0][0] - north) / (mapBounds[0][0] - mapBounds[1][0]);
+    const bottomPercent =
+      (mapBounds[0][0] - south) / (mapBounds[0][0] - mapBounds[1][0]);
 
-    viewportTop = Math.max(20, Math.min(160, topPercent * compassInnerSize + 20));
-    const bottom = Math.max(20, Math.min(160, bottomPercent * compassInnerSize + 20));
+    viewportTop = Math.max(
+      20,
+      Math.min(160, topPercent * compassInnerSize + 20)
+    );
+    const bottom = Math.max(
+      20,
+      Math.min(160, bottomPercent * compassInnerSize + 20)
+    );
     viewportHeight = Math.max(5, bottom - viewportTop);
   }
+
+
+
+
+// Add these variables for the debug panel
+  let clickX = $state(0);
+  let clickY = $state(0);
+  let normalizedX = $state(0);
+  let normalizedY = $state(0);
+  let showDebug = true;
 
   onMount(async () => {
     L = (await import("leaflet")).default;
 
     // 1. Resolve Fonts
-    const computedStyle = getComputedStyle(document.documentElement).getPropertyValue("--sans").trim();
+    const computedStyle = getComputedStyle(document.documentElement)
+      .getPropertyValue("--sans")
+      .trim();
     if (computedStyle) appFontFamily = computedStyle;
 
     // 2. Initialize Canvas for text measurement
@@ -65,10 +96,16 @@
     const padding = mapSize * 0.5;
 
     // Bounds where land tiles actually exist
-    const tileBounds = [[0, 0], [-mapSize, mapSize]];
+    const tileBounds = [
+      [0, 0],
+      [-mapSize, mapSize]
+    ];
 
     // Expanded bounds to allow panning into the ocean
-    const expandedBounds = [[padding, -padding], [-mapSize - padding, mapSize + padding]];
+    const expandedBounds = [
+      [padding, -padding],
+      [-mapSize - padding, mapSize + padding]
+    ];
 
     map = L.map(mapContainer, {
       crs: L.CRS.Simple,
@@ -86,26 +123,43 @@
 
     // --- A. WATER LAYER (The Fix) ---
     // 1. Create a custom pane for water so it sits BEHIND land tiles
-    map.createPane('waterPane');
-    map.getPane('waterPane').style.zIndex = 100; // Standard tilePane is 200
+    map.createPane("waterPane");
+    map.getPane("waterPane").style.zIndex = 100; // Standard tilePane is 200
+
+    map.on("click", function (e) {
+      // Get pixel coordinates
+      const containerPoint = e.containerPoint;
+      clickX = Math.round(containerPoint.x);
+      clickY = Math.round(containerPoint.y);
+
+      // Get the lat/lng from the click
+      const latlng = e.latlng;
+
+      // Convert to normalized coordinates (0-1)
+      normalizedX = latlng.lng / 256;
+      normalizedY = -latlng.lat / 256;
+
+      // Clamp to 0-1 range
+      normalizedX = Math.max(0, Math.min(1, normalizedX));
+      normalizedY = Math.max(0, Math.min(1, normalizedY));
+    });
 
     // 2. Define a Custom GridLayer that returns divs with the texture class
     const WaterLayer = L.GridLayer.extend({
-      createTile: function(coords) {
-        const tile = document.createElement('div');
-        tile.classList.add('water-tile'); // Defined in CSS
+      createTile: function (coords) {
+        const tile = document.createElement("div");
+        tile.classList.add("water-tile"); // Defined in CSS
         return tile;
       }
     });
 
     // 3. Add the Water Layer to the map
     new WaterLayer({
-      pane: 'waterPane', // Use the background pane
-      tileSize: 256,     // Match the land tile size
-      minZoom: 0,        // Visible at all zooms
+      pane: "waterPane", // Use the background pane
+      tileSize: 256, // Match the land tile size
+      minZoom: 0, // Visible at all zooms
       maxZoom: 6
     }).addTo(map);
-
 
     // --- B. LAND LAYER ---
     L.tileLayer("assets/tiles/{z}/{x}/{y}.png", {
@@ -144,11 +198,15 @@
 
   // --- DATA LOADING & SORTING ---
   function shuffle(array) {
-    let currentIndex = array.length, randomIndex;
+    let currentIndex = array.length,
+      randomIndex;
     while (currentIndex != 0) {
       randomIndex = Math.floor(Math.random() * currentIndex);
       currentIndex--;
-      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex],
+        array[currentIndex]
+      ];
     }
     return array;
   }
@@ -183,30 +241,48 @@
   function getFontSize(type, currentZoom) {
     if (type === "l1") {
       switch (Math.floor(currentZoom)) {
-        case 2: return 12;
-        case 3: return 14;
-        case 4: return 25;
-        case 5: return 30;
-        case 6: return 22;
-        default: return 11;
+        case 2:
+          return 12;
+        case 3:
+          return 14;
+        case 4:
+          return 25;
+        case 5:
+          return 30;
+        case 6:
+          return 22;
+        default:
+          return 11;
       }
     } else if (type === "l2") {
       switch (Math.floor(currentZoom)) {
-        case 2: return 9;
-        case 3: return 12;
-        case 4: return 19;
-        case 5: return 27;
-        case 6: return 34;
-        default: return 9;
+        case 2:
+          return 9;
+        case 3:
+          return 12;
+        case 4:
+          return 19;
+        case 5:
+          return 27;
+        case 6:
+          return 34;
+        default:
+          return 9;
       }
     } else if (type === "l3") {
       switch (Math.floor(currentZoom)) {
-        case 2: return 9;
-        case 3: return 11;
-        case 4: return 13;
-        case 5: return 18;
-        case 6: return 22;
-        default: return 9;
+        case 2:
+          return 9;
+        case 3:
+          return 11;
+        case 4:
+          return 13;
+        case 5:
+          return 18;
+        case 6:
+          return 22;
+        default:
+          return 9;
       }
     }
     return 10;
@@ -217,13 +293,23 @@
     if (textWidthCache.has(cacheKey)) return textWidthCache.get(cacheKey);
 
     const fontSize = getFontSize(type, currentZoom);
-    if (type === "l1") measureContext.font = `800 ${fontSize}px ${appFontFamily}`;
+    if (type === "l1")
+      measureContext.font = `800 ${fontSize}px ${appFontFamily}`;
     else measureContext.font = `400 ${fontSize}px ${appFontFamily}`;
 
     const width = measureContext.measureText(text).width;
     // Add L1 spacing to width calc
     if (type === "l1") {
-      const letterSpacing = currentZoom <= 2 ? 2 : currentZoom === 3 ? 5 : currentZoom === 4 ? 7 : currentZoom === 5 ? 10 : 13;
+      const letterSpacing =
+        currentZoom <= 2
+          ? 2
+          : currentZoom === 3
+            ? 5
+            : currentZoom === 4
+              ? 7
+              : currentZoom === 5
+                ? 10
+                : 13;
       const additionalWidth = text.length * letterSpacing;
       textWidthCache.set(cacheKey, width + additionalWidth);
       return width + additionalWidth;
@@ -255,8 +341,12 @@
         const p = allDots[i];
         const pLat = -(p[1] * 256);
         const pLng = p[0] * 256;
-        if (pLat > bounds.getSouth() && pLat < bounds.getNorth() &&
-            pLng > bounds.getWest() && pLng < bounds.getEast()) {
+        if (
+          pLat > bounds.getSouth() &&
+          pLat < bounds.getNorth() &&
+          pLng > bounds.getWest() &&
+          pLng < bounds.getEast()
+        ) {
           visibleDotIndices.add(i);
           dotsCount++;
         }
@@ -276,16 +366,17 @@
         const marker = L.circleMarker([-(p[1] * 256), p[0] * 256], {
           radius: currentRadius,
           color: "#000000",
-          weight: 0.5,
+          weight: 0.1,
           fillColor: "#000000",
-          fillOpacity: 0.3,
+          fillOpacity: 0.2,
           className: "interactive-dot"
-        })
-        .bindPopup(`${p[2]}`);
+        }).bindPopup(`${p[2]}`);
         // .bindPopup(`l1. ${p[4]}<br>l2. ${p[5]}<br>l3. ${p[2]}`);
         marker.addTo(map);
         activeDotMarkers.set(index, marker);
-        requestAnimationFrame(() => marker.getElement()?.classList.add("map-element-visible"));
+        requestAnimationFrame(() =>
+          marker.getElement()?.classList.add("map-element-visible")
+        );
       }
     }
 
@@ -294,7 +385,9 @@
       if (!visibleDotIndices.has(index)) {
         marker.getElement()?.classList.remove("map-element-visible");
         activeDotMarkers.delete(index);
-        setTimeout(() => { if (map.hasLayer(marker)) map.removeLayer(marker); }, 400);
+        setTimeout(() => {
+          if (map.hasLayer(marker)) map.removeLayer(marker);
+        }, 400);
       }
     }
 
@@ -314,10 +407,12 @@
       // Use High Density logic at Zoom 5+ (L3 > L2 > L1)
       if (isHighDensityZoom) {
         const typeRank = { l3: 3, l2: 2, l1: 1 };
-        if (typeRank[a.type] !== typeRank[b.type]) return typeRank[b.type] - typeRank[a.type];
+        if (typeRank[a.type] !== typeRank[b.type])
+          return typeRank[b.type] - typeRank[a.type];
       } else {
         const typeRank = { l1: 3, l2: 2, l3: 1 };
-        if (typeRank[a.type] !== typeRank[b.type]) return typeRank[b.type] - typeRank[a.type];
+        if (typeRank[a.type] !== typeRank[b.type])
+          return typeRank[b.type] - typeRank[a.type];
       }
       if (b.priority !== a.priority) return b.priority - a.priority;
       return b._random - a._random;
@@ -351,7 +446,13 @@
           const idx = y * gridW + x;
           if (grid[idx]) {
             for (const other of grid[idx]) {
-              if (box.l < other.r && box.r > other.l && box.t < other.b && box.b > other.t) return true;
+              if (
+                box.l < other.r &&
+                box.r > other.l &&
+                box.t < other.b &&
+                box.b > other.t
+              )
+                return true;
             }
           }
         }
@@ -374,7 +475,8 @@
       if (!paddedBounds.contains(latLng)) continue;
 
       const pos = map.latLngToContainerPoint(latLng);
-      const baseLineHeight = l.type === "l1" ? hL1 : l.type === "l2" ? hL2 : hL3;
+      const baseLineHeight =
+        l.type === "l1" ? hL1 : l.type === "l2" ? hL2 : hL3;
 
       // Manual Line Breaks
       const lines = l.text.split("\n");
@@ -393,11 +495,14 @@
       const boxHeight = Math.max(1, calcHeight + densityBuffer * 0.5);
 
       const box = {
-        l: pos.x - boxWidth / 2, r: pos.x + boxWidth / 2,
-        t: pos.y - boxHeight / 2, b: pos.y + boxHeight / 2
+        l: pos.x - boxWidth / 2,
+        r: pos.x + boxWidth / 2,
+        t: pos.y - boxHeight / 2,
+        b: pos.y + boxHeight / 2
       };
 
-      if (box.r < 0 || box.l > mapSize.x || box.b < 0 || box.t > mapSize.y) continue;
+      if (box.r < 0 || box.l > mapSize.x || box.b < 0 || box.t > mapSize.y)
+        continue;
 
       const isMandatory = l.priority >= 10;
 
@@ -408,9 +513,12 @@
 
         const fontSize = getFontSize(l.type, zoom);
 
-        const spansHtml = lines.map(line =>
-            `<span style="display: block; white-space: nowrap !important; font-size: ${fontSize}px !important;">${line}</span>`
-        ).join("");
+        const spansHtml = lines
+          .map(
+            (line) =>
+              `<span style="display: block; white-space: nowrap !important; font-size: ${fontSize}px !important;">${line}</span>`
+          )
+          .join("");
 
         const containerHtml = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">${spansHtml}</div>`;
 
@@ -421,7 +529,9 @@
           iconAnchor: [(calcWidth + 20) / 2, (calcHeight + 10) / 2]
         });
 
-        const zIndex = (l.type === "l3" ? 1000 : l.type === "l2" ? 500 : 1) + l.priority * 10;
+        const zIndex =
+          (l.type === "l3" ? 1000 : l.type === "l2" ? 500 : 1) +
+          l.priority * 10;
 
         if (activeLabelMarkers.has(labelId)) {
           const marker = activeLabelMarkers.get(labelId);
@@ -436,7 +546,9 @@
           });
           marker.addTo(map);
           activeLabelMarkers.set(labelId, marker);
-          requestAnimationFrame(() => marker.getElement()?.classList.add("map-element-visible"));
+          requestAnimationFrame(() =>
+            marker.getElement()?.classList.add("map-element-visible")
+          );
         }
       }
     }
@@ -447,18 +559,51 @@
         const el = marker.getElement();
         if (el) el.classList.remove("map-element-visible");
         activeLabelMarkers.delete(id);
-        setTimeout(() => { if (map.hasLayer(marker)) map.removeLayer(marker); }, 400);
+        setTimeout(() => {
+          if (map.hasLayer(marker)) map.removeLayer(marker);
+        }, 400);
       }
     }
+  }
+
+
+
+  // Updated click handler
+  function handleMapClick(event) {
+    if (!map) return;
+
+    // Get pixel coordinates relative to the map container
+    const rect = event.currentTarget.getBoundingClientRect();
+    clickX = Math.round(event.clientX - rect.left);
+    clickY = Math.round(event.clientY - rect.top);
+
+    // Convert pixel coordinates to Leaflet lat/lng
+    const latlng = map.containerPointToLatLng([clickX, clickY]);
+
+    // Convert from your map coordinate system back to normalized (0-1)
+    // Your map uses: lat = -(y * 256), lng = x * 256
+    // So to reverse: x = lng / 256, y = -lat / 256
+    normalizedX = latlng.lng / 256;
+    normalizedY = -latlng.lat / 256;
+
+    // Clamp to 0-1 range to match your data
+    normalizedX = Math.max(0, Math.min(1, normalizedX));
+    normalizedY = Math.max(0, Math.min(1, normalizedY));
   }
 </script>
 
 <div class="wrapper">
   <!-- .map container is bound here -->
-  <div class="map zoom-{Math.floor(zoom)}" bind:this={mapContainer}></div>
+  <div
+    class="map zoom-{Math.floor(zoom)}"
+    bind:this={mapContainer}
+  ></div>
 
   <div class="compass">
-    <div class="viewport-box" style="left: {viewportLeft}px; top: {viewportTop}px; width: {viewportWidth}px; height: {viewportHeight}px;"></div>
+    <div
+      class="viewport-box"
+      style="left: {viewportLeft}px; top: {viewportTop}px; width: {viewportWidth}px; height: {viewportHeight}px;"
+    ></div>
     <div class="yaxis"></div>
     <div class="compassLabel ylabel top">Immediate</div>
     <div class="compassLabel ylabel bottom">Requires planning</div>
@@ -468,9 +613,47 @@
   </div>
 </div>
 
+<textarea class="debug-panel">
+    "x": {normalizedX.toFixed(4)},
+    "y": {normalizedY.toFixed(4)},</textarea>
+
 <style>
-  :global(body), :global(html) { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
-  .wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #1e3d54; z-index: 1; }
+  .debug-panel {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 14px;
+    z-index: 1000;
+    z-index: 999999999;
+    min-width: 150px; /* Add min width for better formatting */
+  }
+
+  .debug-panel div {
+    margin: 2px 0;
+  }
+
+  :global(body),
+  :global(html) {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+  .wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #1e3d54;
+    z-index: 1;
+  }
 
   .map {
     width: 100%;
@@ -478,7 +661,7 @@
     /* Keep a solid fallback color behind the tiles */
     background-color: #0c384a;
   }
-   :global(.water-tile) {
+  :global(.water-tile) {
     width: 256px;
     height: 256px;
 
@@ -492,47 +675,163 @@
   }
 
   /* COMPASS */
-  .compass { position: absolute; left: 10px; bottom: 10px; width: 180px; height: 180px; background: #002436; z-index: 999; border: 2px solid #264a5c; border-radius: 4px; overflow: hidden; }
-  .viewport-box { position: absolute; background: rgba(158, 255, 220, 0.3); pointer-events: none; z-index: 50; border-radius: 3px; }
-  .yaxis { position: absolute; left: 50%; top: 20px; border-left: 1px solid rgb(232, 249, 255); height: calc(100% - 40px); z-index: 60; }
-  .xaxis { position: absolute; top: 50%; left: 20px; border-top: 1px solid rgb(232, 249, 255); width: calc(100% - 40px); z-index: 60; }
-  .compassLabel { position: absolute; font-size: 12px; line-height: 11px; font-weight: 300; color: rgb(232, 249, 255); z-index: 70; }
-  .compassLabel.ylabel { width: 100%; text-align: center; }
-  .compassLabel.xlabel { top: calc(50% - 10px); transform: translateY(-50%); text-align: center; }
-  .compassLabel.top { top: 5px; } .compassLabel.bottom { bottom: 5px; }
-  .compassLabel.left { left: 5px; text-align: left; } .compassLabel.right { right: 5px; text-align: right; }
+  .compass {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    width: 180px;
+    height: 180px;
+    background: #002436;
+    z-index: 999;
+    border: 2px solid #264a5c;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .viewport-box {
+    position: absolute;
+    background: rgba(158, 255, 220, 0.3);
+    pointer-events: none;
+    z-index: 50;
+    border-radius: 1px;
+  }
+  .yaxis {
+    position: absolute;
+    left: 50%;
+    top: 20px;
+    border-left: 1px solid rgb(232, 249, 255);
+    height: calc(100% - 40px);
+    z-index: 60;
+  }
+  .xaxis {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    border-top: 1px solid rgb(232, 249, 255);
+    width: calc(100% - 40px);
+    z-index: 60;
+  }
+  .compassLabel {
+    position: absolute;
+    font-size: 12px;
+    line-height: 11px;
+    font-weight: 300;
+    color: rgb(232, 249, 255);
+    z-index: 70;
+  }
+  .compassLabel.ylabel {
+    width: 100%;
+    text-align: center;
+  }
+  .compassLabel.xlabel {
+    top: calc(50% - 10px);
+    transform: translateY(-50%);
+    text-align: center;
+  }
+  .compassLabel.top {
+    top: 5px;
+  }
+  .compassLabel.bottom {
+    bottom: 5px;
+  }
+  .compassLabel.left {
+    left: 5px;
+    text-align: left;
+  }
+  .compassLabel.right {
+    right: 5px;
+    text-align: right;
+  }
 
   /* ELEMENTS */
-  :global(.map-label), :global(.interactive-dot) { opacity: 0; transition: opacity 0.4s ease-in-out; }
-  :global(.map-element-visible) { opacity: 1 !important; }
-  :global(.interactive-dot) { cursor: pointer; transition: opacity 0.4s, r 0.2s; }
+  :global(.map-label),
+  :global(.interactive-dot) {
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+  }
+  :global(.map-element-visible) {
+    opacity: 1 !important;
+  }
+  :global(.interactive-dot) {
+    cursor: pointer;
+    transition:
+      opacity 0.4s,
+      r 0.2s;
+  }
 
   :global(.map-label) {
-    background: transparent; border: none; text-align: center;
-    white-space: nowrap !important; pointer-events: none;
-    display: flex; justify-content: center; align-items: center; line-height: 1.2;
+    background: transparent;
+    border: none;
+    text-align: center;
+    white-space: nowrap !important;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1.2;
   }
 
-  :global(.map-label span) { display: block; max-width: none !important; white-space: nowrap !important; }
+  :global(.map-label span) {
+    display: block;
+    max-width: none !important;
+    white-space: nowrap !important;
+  }
 
   :global(.label-l1 span) {
-    font-family: var(--serif); font-weight: 800; color: #ffffff; text-transform: uppercase;
+    font-family: var(--serif);
+    font-weight: 800;
+    color: #ffffff;
+    text-transform: uppercase;
     letter-spacing: 0.3em;
-    text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 4px 8px rgba(0, 0, 0, 0.9);
+    text-shadow:
+      2px 0 0 #000,
+      -2px 0 0 #000,
+      0 2px 0 #000,
+      0 -2px 0 #000,
+      1px 1px 0 #000,
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      0 4px 8px rgba(0, 0, 0, 0.9);
   }
-  :global(.zoom-2 .label-l1 span) { letter-spacing: 2px; }
-  :global(.zoom-3 .label-l1 span) { letter-spacing: 5px; }
-  :global(.zoom-4 .label-l1 span) { letter-spacing: 7px; }
+  :global(.zoom-2 .label-l1 span) {
+    letter-spacing: 2px;
+  }
+  :global(.zoom-3 .label-l1 span) {
+    letter-spacing: 5px;
+  }
+  :global(.zoom-4 .label-l1 span) {
+    letter-spacing: 7px;
+  }
 
   :global(.label-l2 span) {
-    font-family: var(--serif); font-weight: 400; color: #ffe06e; text-transform: uppercase;
+    font-family: var(--serif);
+    font-weight: 400;
+    color: #ffe06e;
+    text-transform: uppercase;
     letter-spacing: 1px;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000, 0 2px 4px rgba(0, 0, 0, 0.9);
+    text-shadow:
+      1px 1px 0 #000,
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      1px 0 0 #000,
+      -1px 0 0 #000,
+      0 1px 0 #000,
+      0 -1px 0 #000,
+      0 2px 4px rgba(0, 0, 0, 0.9);
   }
 
   :global(.label-l3 span) {
-    font-family: var(--sans); font-size: 10px; line-height: 10px; font-weight: 400;
-    color: #ffffff; text-transform: none; letter-spacing: 0px;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 1px 3px rgba(0, 0, 0, 1);
+    font-family: var(--sans);
+    font-weight: 400;
+    color: #ffffff;
+    text-transform: none;
+    letter-spacing: 0px;
+    text-shadow:
+      1px 1px 0 #000,
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      0 1px 3px rgba(0, 0, 0, 1);
   }
 </style>
