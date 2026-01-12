@@ -19,8 +19,8 @@
   },
   {
     "text": "DOMESTIC<br>MAINTENANCE",
-    "x": 0.728784046518469,
-    "y": 0.32508417561172812,
+        "x": 0.7261,
+    "y": 0.3086,
     "type": "l1",
     "priority": 10,
     "zoom_min": 0,
@@ -144,9 +144,18 @@
     "city_count": 1561
   },
   {
-    "text": "Achievement",
+    "text": "Work Achievement",
     "x": 0.4543,
     "y": 0.7043,
+    "type": "l2",
+    "priority": 5,
+    "zoom_min": 3,
+    "city_count": 3036
+  },
+    {
+    "text": "School Achievement",
+        "x": 0.5806,
+    "y": 0.7190,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -172,8 +181,8 @@
   },
   {
     "text": "Child Achievement",
-    "x": 0.1759541318239798,
-    "y": 0.6393765825536121,
+        "x": 0.1821,
+    "y": 0.6267,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -225,7 +234,7 @@
     "city_count": 1206
   },
   {
-    "text": "Experience",
+    "text": "School Experience",
     "x": 0.551220847832633,
     "y": 0.6348161229950031,
     "type": "l2",
@@ -234,7 +243,7 @@
     "city_count": 582
   },
   {
-    "text": "Milestone",
+    "text": "School Milestone",
     "x": 0.5145892966923766,
     "y": 0.6862054252231148,
     "type": "l2",
@@ -261,9 +270,9 @@
     "city_count": 226
   },
   {
-    "text": "Creative Experience",
-    "x": 0.9032649967319272,
-    "y": 0.5383931524002787,
+    "text": "Creative<br>Experience",
+        "x": 0.9080,
+    "y": 0.4990,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -334,8 +343,8 @@
   },
   {
     "text": "Family Milestone",
-    "x": 0.09593356185125651,
-    "y": 0.5932340278027206,
+      "x": 0.1086,
+    "y": 0.5718,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -369,16 +378,16 @@
     "city_count": 1145
   },
   {
-    "text": "Romantic Experience",
-    "x": 0.4136890667001586,
-    "y": 0.3474480712328164,
+    "text": "Romantic<br>Experience",
+       "x": 0.4124,
+    "y": 0.3357,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
     "city_count": 975
   },
   {
-    "text": "Romantic Milestone",
+    "text": "Romantic<br>Milestone",
     "x": 0.4208777681363918,
     "y": 0.391616661832223,
     "type": "l2",
@@ -432,7 +441,7 @@
     "city_count": 4329
   },
   {
-    "text": "Career Opportunities",
+    "text": "Career<br>Opportunities",
     "x": 0.385419641683558,
     "y": 0.7417965593948554,
     "type": "l3",
@@ -451,17 +460,26 @@
   },
   {
     "text": "Employment & Job Transition",
-    "x": 0.3978619011728757,
-    "y": 0.8344795022121517,
+        "x": 0.4010,
+    "y": 0.8059,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 1437
   },
   {
-    "text": "Financial & Professional Status",
-    "x": 0.35238675083988974,
-    "y": 0.8011046666191604,
+    "text": "Employment & Job Transition",
+          "x": 0.3580,
+    "y": 0.8694,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 1437
+  },
+  {
+    "text": "Financial &<br>Professional Status",
+        "x": 0.3538,
+    "y": 0.8000,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -478,8 +496,17 @@
   },
   {
     "text": "Project & Task Completion",
-    "x": 0.46870803775785475,
-    "y": 0.6921307843062736,
+        "x": 0.5063,
+    "y": 0.7305,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 2526
+  },
+  {
+    "text": "Project & Task Completion",
+          "x": 0.4546,
+    "y": 0.6101,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -495,16 +522,16 @@
     "city_count": 1
   },
   {
-    "text": "Sales & Business Wins",
-    "x": 0.40958655920415793,
-    "y": 0.6530346367733315,
+    "text": "Sales &<br>Business Wins",
+        "x": 0.4136,
+    "y": 0.6404,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 283
   },
   {
-    "text": "Career Opportunities",
+    "text": "Career<br>Opportunities",
     "x": 0.3937614187522864,
     "y": 0.5165032320599552,
     "type": "l3",
@@ -568,26 +595,26 @@
   },
   {
     "text": "Academic & Talent Success",
-    "x": 0.17070803776524665,
-    "y": 0.6512935468123697,
+        "x": 0.1787,
+    "y": 0.6592,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 1299
   },
   {
-    "text": "Sports & Extracurricular Success",
-    "x": 0.19367119232101332,
-    "y": 0.5991307207086616,
+    "text": "Sports & Activities",
+        "x": 0.1941,
+    "y": 0.6023,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 379
   },
   {
-    "text": "Developmental Milestones",
-    "x": 0.21079477982826092,
-    "y": 0.680427204726515,
+    "text": "Developmental<br>Milestones",
+        "x": 0.2146,
+    "y": 0.6873,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -595,8 +622,8 @@
   },
   {
     "text": "Life Transitions",
-    "x": 0.22911193543492317,
-    "y": 0.7125892900271371,
+        "x": 0.2368,
+    "y": 0.7090,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -604,8 +631,8 @@
   },
   {
     "text": "Pregnancy & Birth",
-    "x": 0.2320712576553946,
-    "y": 0.7749886939214152,
+        "x": 0.2280,
+    "y": 0.7612,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -649,8 +676,8 @@
   },
   {
     "text": "Repairs & Projects",
-    "x": 0.7035218311083669,
-    "y": 0.35752271387981527,
+        "x": 0.7151,
+    "y": 0.3486,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -658,8 +685,8 @@
   },
   {
     "text": "Routine Cleaning & Chores",
-    "x": 0.7888566523161187,
-    "y": 0.3238992976382278,
+        "x": 0.7772,
+    "y": 0.3191,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -684,9 +711,9 @@
     "city_count": 306
   },
   {
-    "text": "Pet Ownership & Acquisition",
-    "x": 0.6139844329711103,
-    "y": 0.3972602794009893,
+    "text": "Pet Ownership<br>& Acquisition",
+        "x": 0.5837,
+    "y": 0.4152,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -694,26 +721,26 @@
   },
   {
     "text": "Academic Performance",
-    "x": 0.5667677239778671,
-    "y": 0.7018327378459976,
+        "x": 0.5730,
+    "y": 0.6829,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 1082
   },
   {
-    "text": "Admissions & Enrollment",
-    "x": 0.49208473021325133,
-    "y": 0.633869850959724,
+    "text": "Admissions<br>& Enrollment",
+        "x": 0.5054,
+    "y": 0.6418,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 1
   },
   {
-    "text": "Course & Project Success",
-    "x": 0.6309956194691159,
-    "y": 0.7744773755092605,
+    "text": "Course &<br>Project Success",
+        "x": 0.6362,
+    "y": 0.7842,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -729,9 +756,9 @@
     "city_count": 143
   },
   {
-    "text": "Discovery & Exploration",
-    "x": 0.5806834019468137,
-    "y": 0.6599721663908276,
+    "text": "Discovery<br>& Exploration",
+        "x": 0.5826,
+    "y": 0.6592,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -739,8 +766,8 @@
   },
   {
     "text": "Learning & Development",
-    "x": 0.5602373814218201,
-    "y": 0.6366015760187118,
+        "x": 0.5752,
+    "y": 0.6449,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -756,9 +783,9 @@
     "city_count": 396
   },
   {
-    "text": "Graduation & Completion",
-    "x": 0.5937937580813667,
-    "y": 0.7730504067737006,
+    "text": "Graduation<br>& Completion",
+        "x": 0.6226,
+    "y": 0.8052,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -774,9 +801,9 @@
     "city_count": 370
   },
   {
-    "text": "Intimate Interaction & Conversation",
-    "x": 0.5110919454652311,
-    "y": 0.44766483571025906,
+    "text": "Intimate Hangout & Chats",
+        "x": 0.4934,
+    "y": 0.4343,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -792,18 +819,18 @@
     "city_count": 198
   },
   {
-    "text": "Friend's Celebrations",
-    "x": 0.4770832008857096,
-    "y": 0.46228119129934786,
+    "text": "Friend's<br>Celebrations",
+        "x": 0.4818,
+    "y": 0.4690,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 122
   },
   {
-    "text": "Friend's Life Updates",
-    "x": 0.45619758342831174,
-    "y": 0.4571405140872198,
+    "text": "Friend's<br>Life Updates",
+        "x": 0.4525,
+    "y": 0.4491,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -811,8 +838,8 @@
   },
   {
     "text": "Arts, Crafts & Gardening",
-    "x": 0.8011488909457899,
-    "y": 0.4468191915833244,
+    "x": 0.8232,
+    "y": 0.4387,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -820,8 +847,8 @@
   },
   {
     "text": "Culinary Arts",
-    "x": 0.9048061758784182,
-    "y": 0.5346274446441095,
+        "x": 0.9084,
+    "y": 0.5107,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -900,9 +927,9 @@
     "city_count": 1041
   },
   {
-    "text": "Spectator Sports & Games",
-    "x": 0.5616678040615606,
-    "y": 0.2104777936084964,
+    "text": "Spectator Sports<br>& Games",
+        "x": 0.5802,
+    "y": 0.2371,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -936,9 +963,9 @@
     "city_count": 1260
   },
   {
-    "text": "Relaxation & Idleness",
-    "x": 0.5680441062723661,
-    "y": 0.3025687581778579,
+    "text": "Relaxation<br>& Idleness",
+      "x": 0.5897,
+    "y": 0.2874,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -982,17 +1009,26 @@
   },
   {
     "text": "Shopping & Purchases",
-    "x": 0.713046835473837,
-    "y": 0.48719071016795523,
+        "x": 0.7518,
+    "y": 0.5121,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 1547
+  },
+   {
+    "text": "Shopping & Purchases",
+        "x": 0.6427,
+    "y": 0.4636,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 1547
   },
   {
-    "text": "Small Treats & Personal Items",
-    "x": 0.7604631807992839,
-    "y": 0.5272918868942601,
+    "text": "Small Treats &<br>Personal Items",
+        "x": 0.7365,
+    "y": 0.5404,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1018,17 +1054,53 @@
   },
   {
     "text": "Gatherings & Social Events",
-    "x": 0.31219127029061267,
-    "y": 0.4930685750203124,
+        "x": 0.2764,
+    "y": 0.7288,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 3737
   },
   {
-    "text": "Shared Activities & Outings",
-    "x": 0.30597007505411344,
-    "y": 0.8059768636091748,
+    "text": "Gatherings &<br>Social Events",
+          "x": 0.2942,
+    "y": 0.5815,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 3737
+  },
+   {
+    "text": "Gatherings &<br>Social Events",
+        "x": 0.3926,
+    "y": 0.4775,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 3737
+  },
+  {
+    "text": "Gatherings &<br>Social Events",
+        "x": 0.3386,
+    "y": 0.3567,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 3737
+  },
+  {
+    "text": "Gatherings &<br>Social Events",
+         "x": 0.2245,
+    "y": 0.4033,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 3737
+  },
+  {
+    "text": "Shared Activities<br>& Outings",
+        "x": 0.2791,
+    "y": 0.7842,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1054,8 +1126,8 @@
   },
   {
     "text": "Behavioral Change & Discipline",
-    "x": 0.7531690974789911,
-    "y": 0.7547104674302654,
+        "x": 0.7385,
+    "y": 0.7380,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1063,8 +1135,8 @@
   },
   {
     "text": "Emotional & Internal States",
-    "x": 0.7884726253547348,
-    "y": 0.5889687979757734,
+        "x": 0.5874,
+    "y": 0.5376,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1080,9 +1152,18 @@
     "city_count": 2331
   },
   {
-    "text": "Personal Problem Solving",
-    "x": 0.7106897276183438,
-    "y": 0.6957657769529346,
+    "text": "Problem Solving",
+         "x": 0.6545,
+    "y": 0.6658,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 1015
+  },
+  {
+    "text": "Problem Solving",
+         "x": 0.7614,
+    "y": 0.7101,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1117,15 +1198,15 @@
   },
   {
     "text": "Spiritual & Reflective",
-    "x": 0.6645773292977477,
-    "y": 0.5631907925384925,
+        "x": 0.6689,
+    "y": 0.5735,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
     "city_count": 628
   },
   {
-    "text": "Financial Status Change",
+    "text": "Financial<br>Status Change",
     "x": 0.705945661544457,
     "y": 0.8011240534261214,
     "type": "l3",
@@ -1162,8 +1243,8 @@
   },
   {
     "text": "Intimacy & Affection",
-    "x": 0.37397514702657764,
-    "y": 0.3147993161834012,
+        "x": 0.3903,
+    "y": 0.3191,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -1215,7 +1296,7 @@
     "city_count": 924
   },
   {
-    "text": "Hygiene & Grooming Sensations",
+    "text": "Hygiene & Grooming",
     "x": 0.48673776542159897,
     "y": 0.27063487888268845,
     "type": "l3",
@@ -1245,6 +1326,15 @@
     "text": "Beverages",
     "x": 0.5326,
     "y": 0.2489,
+    "type": "l3",
+    "priority": 3,
+    "zoom_min": 5,
+    "city_count": 505
+  },
+    {
+    "text": "Beverages",
+        "x": 0.5298,
+    "y": 0.1970,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,

@@ -78,7 +78,7 @@
   let normalizedY = $state(0);
   let showDebug = true;
 
-  onMount(async () => {
+ onMount(async () => {
     L = (await import("leaflet")).default;
 
     // 1. Resolve Fonts
@@ -87,25 +87,15 @@
       .trim();
     if (computedStyle) appFontFamily = computedStyle;
 
-    // 2. Initialize Canvas for text measurement
+    // 2. Initialize Canvas
     const canvas = document.createElement("canvas");
     measureContext = canvas.getContext("2d");
 
     // 3. MAP CONFIGURATION
     const mapSize = 256;
     const padding = mapSize * 0.5;
-
-    // Bounds where land tiles actually exist
-    const tileBounds = [
-      [0, 0],
-      [-mapSize, mapSize]
-    ];
-
-    // Expanded bounds to allow panning into the ocean
-    const expandedBounds = [
-      [padding, -padding],
-      [-mapSize - padding, mapSize + padding]
-    ];
+    const tileBounds = [[0, 0], [-mapSize, mapSize]];
+    const expandedBounds = [[padding, -padding], [-mapSize - padding, mapSize + padding]];
 
     map = L.map(mapContainer, {
       crs: L.CRS.Simple,
@@ -121,43 +111,22 @@
       wheelPxPerZoomLevel: 60
     });
 
-    // --- A. WATER LAYER (The Fix) ---
-    // 1. Create a custom pane for water so it sits BEHIND land tiles
+    // --- A. WATER LAYER ---
     map.createPane("waterPane");
-    map.getPane("waterPane").style.zIndex = 100; // Standard tilePane is 200
+    map.getPane("waterPane").style.zIndex = 100;
 
-    map.on("click", function (e) {
-      // Get pixel coordinates
-      const containerPoint = e.containerPoint;
-      clickX = Math.round(containerPoint.x);
-      clickY = Math.round(containerPoint.y);
-
-      // Get the lat/lng from the click
-      const latlng = e.latlng;
-
-      // Convert to normalized coordinates (0-1)
-      normalizedX = latlng.lng / 256;
-      normalizedY = -latlng.lat / 256;
-
-      // Clamp to 0-1 range
-      normalizedX = Math.max(0, Math.min(1, normalizedX));
-      normalizedY = Math.max(0, Math.min(1, normalizedY));
-    });
-
-    // 2. Define a Custom GridLayer that returns divs with the texture class
     const WaterLayer = L.GridLayer.extend({
       createTile: function (coords) {
         const tile = document.createElement("div");
-        tile.classList.add("water-tile"); // Defined in CSS
+        tile.classList.add("water-tile");
         return tile;
       }
     });
 
-    // 3. Add the Water Layer to the map
     new WaterLayer({
-      pane: "waterPane", // Use the background pane
-      tileSize: 256, // Match the land tile size
-      minZoom: 0, // Visible at all zooms
+      pane: "waterPane",
+      tileSize: 256,
+      minZoom: 0,
       maxZoom: 6
     }).addTo(map);
 
@@ -167,32 +136,92 @@
       minZoom: 0,
       maxZoom: 6,
       noWrap: true,
-      bounds: tileBounds, // Limit land tiles to the world box
+      bounds: tileBounds,
       errorTileUrl: ""
     }).addTo(map);
 
-    // Snap view to the map initially
     map.fitBounds(tileBounds);
 
-    // 4. Load Data & Setup Interactions
+    // --- C. INTERACTION & DEBUG ---
+
+    // Debug Click Handler
+    map.on("click", function (e) {
+      const containerPoint = e.containerPoint;
+      clickX = Math.round(containerPoint.x);
+      clickY = Math.round(containerPoint.y);
+      const latlng = e.latlng;
+      normalizedX = Math.max(0, Math.min(1, latlng.lng / 256));
+      normalizedY = Math.max(0, Math.min(1, -latlng.lat / 256));
+    });
+
+    // --- NEW: FUZZY DOT CLICKING ---
+    // If the user misses a dot by a few pixels, we find the closest one and open it.
+    map.on("click", (e) => {
+      const clickPoint = e.containerPoint;
+      const CLICK_THRESHOLD = 30;
+
+      let minDistanceSq = CLICK_THRESHOLD * CLICK_THRESHOLD;
+      let closestMarker = null;
+
+      for (const marker of activeDotMarkers.values()) {
+        const markerPoint = map.latLngToContainerPoint(marker.getLatLng());
+        const dx = clickPoint.x - markerPoint.x;
+        const dy = clickPoint.y - markerPoint.y;
+        const distSq = dx * dx + dy * dy;
+
+        if (distSq < minDistanceSq) {
+          minDistanceSq = distSq;
+          closestMarker = marker;
+        }
+      }
+
+      if (closestMarker) {
+        closestMarker.openPopup();
+      }
+    });
+
+    // --- NEW: HIGHLIGHT ACTIVE DOT ---
+    map.on("popupopen", (e) => {
+      const marker = e.popup._source;
+      if (marker && marker.setStyle) {
+        marker.setStyle({
+          color: "#ffe06e",     // L2 Yellow
+          fillColor: "#ffe06e",
+          fillOpacity: 1.0,
+          weight: 2
+        });
+        marker.bringToFront();
+      }
+    });
+
+    map.on("popupclose", (e) => {
+      const marker = e.popup._source;
+      if (marker && marker.setStyle) {
+        marker.setStyle({
+          color: "#000000",
+          fillColor: "#000000",
+          fillOpacity: 0.2,
+          weight: 0.1
+        });
+      }
+    });
+
+    // 4. Load Data
     await loadData();
 
+    // 5. Render Loop
     let renderTimeout;
     const triggerRender = () => {
       clearTimeout(renderTimeout);
       renderTimeout = setTimeout(() => {
-        renderViewport(); // Calculates Dots and Labels (Heavy)
+        renderViewport();
         updateCompassViewport();
       }, 30);
     };
 
-    // Recalculate heavy DOM elements only when movement stops
     map.on("moveend zoomend", triggerRender);
-
-    // Update lightweight UI (Compass) during movement for smoothness
     map.on("move zoom", updateCompassViewport);
 
-    // Initial Render once fonts are loaded
     document.fonts.ready.then(triggerRender);
   });
 
@@ -263,9 +292,9 @@
         case 4:
           return 19;
         case 5:
-          return 27;
+          return 23;
         case 6:
-          return 34;
+          return 28;
         default:
           return 9;
       }
@@ -319,22 +348,22 @@
   }
 
   // --- RENDER VIEWPORT ---
-  function renderViewport() {
+ function renderViewport() {
     if (!map) return;
 
     zoom = map.getZoom();
     const currentZoomInt = Math.floor(zoom);
     const bounds = map.getBounds();
+    // Keep the pad to ensure labels don't pop in/out instantly at the edge
     const paddedBounds = bounds.pad(0.1);
-    const mapSize = map.getSize();
-
-    // High Density Mode (Zoom 5+): Shows L3 first, hides L1
-    const isHighDensityZoom = zoom >= 5;
 
     // --- A. DOTS RENDERING ---
+    // (Dots logic remains unchanged: Show based on bounds)
     const visibleDotIndices = new Set();
+    // Only show dots starting at Zoom 3
     if (zoom >= 3) {
-      const maxDots = isHighDensityZoom ? Infinity : 15000;
+      // Show all dots at high zoom, cap at 15k for performance low zoom
+      const maxDots = zoom >= 5 ? Infinity : 15000;
       let dotsCount = 0;
       for (let i = 0; i < allDots.length; i++) {
         if (dotsCount >= maxDots) break;
@@ -355,7 +384,6 @@
 
     const currentRadius = Math.max(1, zoom / 2);
 
-    // Enter / Update Dots
     for (const index of visibleDotIndices) {
       if (activeDotMarkers.has(index)) {
         const marker = activeDotMarkers.get(index);
@@ -371,7 +399,6 @@
           fillOpacity: 0.2,
           className: "interactive-dot"
         }).bindPopup(`${p[2]}`);
-        // .bindPopup(`l1. ${p[4]}<br>l2. ${p[5]}<br>l3. ${p[2]}`);
         marker.addTo(map);
         activeDotMarkers.set(index, marker);
         requestAnimationFrame(() =>
@@ -380,7 +407,6 @@
       }
     }
 
-    // Exit Dots
     for (const [index, marker] of activeDotMarkers) {
       if (!visibleDotIndices.has(index)) {
         marker.getElement()?.classList.remove("map-element-visible");
@@ -391,94 +417,49 @@
       }
     }
 
-    // --- B. LABELS RENDERING ---
+    // --- B. LABELS RENDERING (NO COLLISION) ---
 
-    // 1. Filter
+    // 1. Filter: Which types are allowed at this zoom?
     let labelsToConsider = allLabels.filter((l) => {
       // Hide L1 labels from zoom 5 and beyond
       if (l.type === "l1") return currentZoomInt < 5;
+      // Show L2 starting at zoom 3
       if (l.type === "l2") return currentZoomInt >= 3;
+      // Show L3 starting at zoom 4
       if (l.type === "l3") return currentZoomInt >= 4;
       return false;
     });
 
-    // 2. Sort
+    // 2. Sort: Just for z-index layering (L3 on top of L2, etc)
     labelsToConsider.sort((a, b) => {
-      // Use High Density logic at Zoom 5+ (L3 > L2 > L1)
-      if (isHighDensityZoom) {
-        const typeRank = { l3: 3, l2: 2, l1: 1 };
-        if (typeRank[a.type] !== typeRank[b.type])
-          return typeRank[b.type] - typeRank[a.type];
-      } else {
-        const typeRank = { l1: 3, l2: 2, l3: 1 };
-        if (typeRank[a.type] !== typeRank[b.type])
-          return typeRank[b.type] - typeRank[a.type];
-      }
+      const typeRank = { l3: 3, l2: 2, l1: 1 };
+      // Standard z-index stack: L3 > L2 > L1
+      if (typeRank[a.type] !== typeRank[b.type])
+        return typeRank[a.type] - typeRank[b.type];
+
       if (b.priority !== a.priority) return b.priority - a.priority;
       return b._random - a._random;
     });
 
-    // 3. Grid Setup
-    const cellSize = 50;
-    const gridW = Math.ceil(mapSize.x / cellSize);
-    const gridH = Math.ceil(mapSize.y / cellSize);
-    const grid = new Array(gridW * gridH).fill(null);
-    const addToGrid = (box) => {
-      const startX = Math.floor(Math.max(0, box.l) / cellSize);
-      const endX = Math.floor(Math.min(mapSize.x - 1, box.r) / cellSize);
-      const startY = Math.floor(Math.max(0, box.t) / cellSize);
-      const endY = Math.floor(Math.min(mapSize.y - 1, box.b) / cellSize);
-      for (let x = startX; x <= endX; x++) {
-        for (let y = startY; y <= endY; y++) {
-          const idx = y * gridW + x;
-          if (!grid[idx]) grid[idx] = [];
-          grid[idx].push(box);
-        }
-      }
-    };
-    const checkCollision = (box) => {
-      const startX = Math.floor(Math.max(0, box.l) / cellSize);
-      const endX = Math.floor(Math.min(mapSize.x - 1, box.r) / cellSize);
-      const startY = Math.floor(Math.max(0, box.t) / cellSize);
-      const endY = Math.floor(Math.min(mapSize.y - 1, box.b) / cellSize);
-      for (let x = startX; x <= endX; x++) {
-        for (let y = startY; y <= endY; y++) {
-          const idx = y * gridW + x;
-          if (grid[idx]) {
-            for (const other of grid[idx]) {
-              if (
-                box.l < other.r &&
-                box.r > other.l &&
-                box.t < other.b &&
-                box.b > other.t
-              )
-                return true;
-            }
-          }
-        }
-      }
-      return false;
-    };
-
     const hL1 = getFontSize("l1", zoom);
     const hL2 = getFontSize("l2", zoom);
     const hL3 = 10;
-    const densityBuffer = isHighDensityZoom ? 2 : (3.5 - zoom) * 4;
+
     const validLabelIds = new Set();
 
-    // 4. Process Labels
+    // 3. Process Labels
     for (const l of labelsToConsider) {
       const lblLat = -(l.y * 256);
       const lblLng = l.x * 256;
       const latLng = L.latLng(lblLat, lblLng);
 
+      // Basic optimization: Don't render DOM nodes if they are way off screen
       if (!paddedBounds.contains(latLng)) continue;
 
-      const pos = map.latLngToContainerPoint(latLng);
       const baseLineHeight =
         l.type === "l1" ? hL1 : l.type === "l2" ? hL2 : hL3;
 
-      // Manual Line Breaks
+      // Text Measurement (Still needed to center the icon correctly)
       const lines = l.text.split("\n");
 
       let maxLineWidth = 0;
@@ -487,73 +468,57 @@
         if (w > maxLineWidth) maxLineWidth = w;
       });
 
-      // No Max Width constraints, just use calculated width + buffer
       const calcWidth = maxLineWidth + 10;
       const calcHeight = baseLineHeight * lines.length * 1.2;
 
-      const boxWidth = Math.max(1, calcWidth + densityBuffer);
-      const boxHeight = Math.max(1, calcHeight + densityBuffer * 0.5);
+      // --- NO COLLISION CHECKS ---
+      // We immediately proceed to add/update the label
 
-      const box = {
-        l: pos.x - boxWidth / 2,
-        r: pos.x + boxWidth / 2,
-        t: pos.y - boxHeight / 2,
-        b: pos.y + boxHeight / 2
-      };
+      const labelId = `${l.text}_${l.type}`;
+      validLabelIds.add(labelId);
 
-      if (box.r < 0 || box.l > mapSize.x || box.b < 0 || box.t > mapSize.y)
-        continue;
+      const fontSize = getFontSize(l.type, zoom);
 
-      const isMandatory = l.priority >= 10;
+      const spansHtml = lines
+        .map(
+          (line) =>
+            `<span style="display: block; white-space: nowrap !important; font-size: ${fontSize}px !important;">${line}</span>`
+        )
+        .join("");
 
-      if (isMandatory || !checkCollision(box)) {
-        addToGrid(box);
-        const labelId = `${l.text}_${l.type}`;
-        validLabelIds.add(labelId);
+      const containerHtml = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">${spansHtml}</div>`;
 
-        const fontSize = getFontSize(l.type, zoom);
+      const icon = L.divIcon({
+        className: `map-label label-${l.type}`,
+        html: containerHtml,
+        iconSize: [calcWidth + 20, calcHeight + 10],
+        iconAnchor: [(calcWidth + 20) / 2, (calcHeight + 10) / 2]
+      });
 
-        const spansHtml = lines
-          .map(
-            (line) =>
-              `<span style="display: block; white-space: nowrap !important; font-size: ${fontSize}px !important;">${line}</span>`
-          )
-          .join("");
+      const zIndex =
+        (l.type === "l3" ? 1000 : l.type === "l2" ? 500 : 1) +
+        l.priority * 10;
 
-        const containerHtml = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">${spansHtml}</div>`;
-
-        const icon = L.divIcon({
-          className: `map-label label-${l.type}`,
-          html: containerHtml,
-          iconSize: [calcWidth + 20, calcHeight + 10],
-          iconAnchor: [(calcWidth + 20) / 2, (calcHeight + 10) / 2]
+      if (activeLabelMarkers.has(labelId)) {
+        const marker = activeLabelMarkers.get(labelId);
+        marker.setIcon(icon);
+        marker.setZIndexOffset(zIndex);
+        marker.getElement()?.classList.add("map-element-visible");
+      } else {
+        const marker = L.marker([lblLat, lblLng], {
+          icon: icon,
+          interactive: false,
+          zIndexOffset: zIndex
         });
-
-        const zIndex =
-          (l.type === "l3" ? 1000 : l.type === "l2" ? 500 : 1) +
-          l.priority * 10;
-
-        if (activeLabelMarkers.has(labelId)) {
-          const marker = activeLabelMarkers.get(labelId);
-          marker.setIcon(icon);
-          marker.setZIndexOffset(zIndex);
-          marker.getElement()?.classList.add("map-element-visible");
-        } else {
-          const marker = L.marker([lblLat, lblLng], {
-            icon: icon,
-            interactive: false,
-            zIndexOffset: zIndex
-          });
-          marker.addTo(map);
-          activeLabelMarkers.set(labelId, marker);
-          requestAnimationFrame(() =>
-            marker.getElement()?.classList.add("map-element-visible")
-          );
-        }
+        marker.addTo(map);
+        activeLabelMarkers.set(labelId, marker);
+        requestAnimationFrame(() =>
+          marker.getElement()?.classList.add("map-element-visible")
+        );
       }
     }
 
-    // Cleanup
+    // Cleanup labels that fell out of zoom scope or viewport
     for (const [id, marker] of activeLabelMarkers) {
       if (!validLabelIds.has(id)) {
         const el = marker.getElement();
@@ -778,10 +743,10 @@
 
   :global(.label-l1 span) {
     font-family: var(--serif);
-    font-weight: 800;
+    font-weight: 400;
     color: #ffffff;
     text-transform: uppercase;
-    letter-spacing: 0.3em;
+    letter-spacing: 0.4em;
     text-shadow:
       2px 0 0 #000,
       -2px 0 0 #000,
