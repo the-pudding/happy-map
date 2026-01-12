@@ -1,7 +1,7 @@
 [
   {
     "text": "CAREER AND WORK",
-    "x": 0.41385123370819127,
+    "x": 0.38385123370819127,
     "y": 0.6740025529873428,
     "type": "l1",
     "priority": 10,
@@ -10,7 +10,7 @@
   },
   {
     "text": "CHILDREN",
-    "x": 0.23589778566460326,
+    "x": 0.20589778566460326,
     "y": 0.5875778764434072,
     "type": "l1",
     "priority": 10,
@@ -18,9 +18,9 @@
     "city_count": 7127
   },
   {
-    "text": "DOMESTIC MAINTENANCE",
-    "x": 0.68784046518469,
-    "y": 0.3508417561172812,
+    "text": "DOMESTIC<br>MAINTENANCE",
+    "x": 0.728784046518469,
+    "y": 0.32508417561172812,
     "type": "l1",
     "priority": 10,
     "zoom_min": 0,
@@ -28,25 +28,25 @@
   },
   {
     "text": "EDUCATION",
-    "x": 0.5634310766280586,
-    "y": 0.7003287053525296,
+    "x": 0.53734310766280586,
+    "y": 0.6603287053525296,
     "type": "l1",
     "priority": 10,
     "zoom_min": 0,
     "city_count": 2706
   },
   {
-    "text": "FRIENDS AND SOCIAL",
-    "x": 0.516200575900888,
-    "y": 0.4489111638947466,
+    "text": "FRIENDS<br>AND SOCIAL",
+    "x": 0.526200575900888,
+    "y": 0.4609111638947466,
     "type": "l1",
     "priority": 10,
     "zoom_min": 0,
     "city_count": 1623
   },
   {
-    "text": "HOBBIES AND CREATION",
-    "x": 0.7495724336633266,
+    "text": "HOBBIES AND<br>CREATION",
+    "x": 0.775724336633266,
     "y": 0.43394727203074157,
     "type": "l1",
     "priority": 10,
@@ -54,8 +54,8 @@
     "city_count": 6382
   },
   {
-    "text": "LEISURE AND ENTERTAINMENT",
-    "x": 0.5849671010961678,
+    "text": "LEISURE",
+    "x": 0.6249671010961678,
     "y": 0.2569324336676375,
     "type": "l1",
     "priority": 10,
@@ -63,25 +63,25 @@
     "city_count": 7390
   },
   {
-    "text": "MATERIAL ACQUISITION",
-    "x": 0.7356345331460113,
-    "y": 0.5015760811086,
+    "text": "MATERIAL<br>ACQUISITION",
+    "x": 0.7706345331460113,
+    "y": 0.5315760811086,
     "type": "l1",
     "priority": 10,
     "zoom_min": 0,
     "city_count": 3320
   },
   {
-    "text": "PARENTS AND FAMILY",
-    "x": 0.08259361562185508,
-    "y": 0.5978851066289999,
+    "text": "FAMILY",
+    "x": 0.1259361562185508,
+    "y": 0.5278851066289999,
     "type": "l1",
     "priority": 10,
     "zoom_min": 0,
     "city_count": 8744
   },
   {
-    "text": "PARENTS AND FAMILY",
+    "text": "FAMILY",
     "x": 0.3195788566799161,
     "y": 0.5451836768809193,
     "type": "l1",
@@ -90,7 +90,7 @@
     "city_count": 8744
   },
   {
-    "text": "PERSONAL GROWTH",
+    "text": "PERSONAL<br>GROWTH",
     "x": 0.680477252233677,
     "y": 0.6484340233477309,
     "type": "l1",
@@ -99,8 +99,8 @@
     "city_count": 8077
   },
   {
-    "text": "ROMANTIC",
-    "x": 0.4150660360190497,
+    "text": "LOVE",
+    "x": 0.4190660360190497,
     "y": 0.35590840230283627,
     "type": "l1",
     "priority": 10,
@@ -108,7 +108,7 @@
     "city_count": 1301
   },
   {
-    "text": "SENSORY PLEASURE",
+    "text": "SENSORY<br>PLEASURE",
     "x": 0.4422656466240075,
     "y": 0.2194816732333975,
     "type": "l1",
@@ -117,7 +117,7 @@
     "city_count": 6020
   },
   {
-    "text": "SURPRISES AND SERENDIPITY",
+    "text": "SERENDIPITY",
     "x": 0.202483706007963,
     "y": 0.2591719932172073,
     "type": "l1",

@@ -82,3 +82,30 @@ svg {
 	width: 100%;
 	height: auto;
 }
+
+
+
+  .leaflet-popup-content-wrapper {
+    border-radius: 2px !important;
+    background: #ebe9d8 !important;
+    box-shadow:  2px 2px 4px #000 !important;
+  }
+.leaflet-popup-tip {
+	background: #ebe9d8 !important;
+}
+  .leaflet-container {
+      font-family: var(--serif) !important;
+  }
+  .leaflet-popup-content {
+  	margin: 10px 24px 10px 10px!important;
+  }
+  .leaflet-popup-close-button {
+  	color:  black !important;
+  }
+  .leaflet-popup-close-button span {
+  	position: absolute;
+  	top:  4px;
+  	right: 0px;
+  	width:  100%;
+  	height: 100%;
+  }
