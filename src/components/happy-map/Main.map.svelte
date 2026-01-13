@@ -361,7 +361,7 @@
 
     // Only show dots starting at Zoom 3
     if (zoom >= 0) {
-      const maxDots = zoom*200; //zoom >= 5 ? 1000 : 300;
+      const maxDots = Math.min(300, zoom * 200);
       let dotsCount = 0;
       for (let i = 0; i < allDots.length; i++) {
         if (dotsCount >= maxDots) break;
@@ -385,7 +385,7 @@
 
     // 2. Icon Caching Helper
     function getCachedIcon(baseName, isActive) {
-      const stateSuffix = isActive ? "-active" : "";
+      const stateSuffix = isActive ? "-active" : "-default";
       const cacheKey = `${baseName}${stateSuffix}-${currentSize}`;
 
       if (iconCache.has(cacheKey)) {
@@ -394,9 +394,9 @@
 
       const icon = L.icon({
         iconUrl: `assets/icons/${baseName}${stateSuffix}.png`,
-        iconSize: [currentSize, currentSize],
-        iconAnchor: [currentSize / 2, currentSize / 2],
-        popupAnchor: [0, -currentSize / 2],
+        iconSize: [currentSize*0.5333333333, currentSize],
+        iconAnchor: [currentSize* 0.5333333333 / 2, currentSize / 2],
+        popupAnchor: [0, -currentSize*0.5333333333 / 2],
         className: "interactive-dot"
       });
 
@@ -660,13 +660,13 @@
   :global(html) {
     margin: 0;
     padding: 0;
-    height: 100%;
+    height: 100vh;
     width: 100%;
     overflow: hidden;
   }
   .wrapper {
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
@@ -676,7 +676,7 @@
 
   .map {
     width: 100%;
-    height: 100%;
+    height: 100vh;
     /* Keep a solid fallback color behind the tiles */
     background-color: #0c384a;
   }
@@ -697,7 +697,7 @@
   .compass {
     position: absolute;
     left: 10px;
-    bottom: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom, 10px));
 
     /* Responsive sizing logic */
     width: clamp(130px, 18vw, 180px);
@@ -811,10 +811,10 @@
 
   :global(.label-l1 span) {
     font-family: var(--serif);
-    font-weight: 400;
+    font-weight: 800;
     color: #ffffff;
     text-transform: uppercase;
-    letter-spacing: 0.4em;
+    letter-spacing: 0.2em;
     text-shadow:
       2px 0 0 #000,
       -2px 0 0 #000,
