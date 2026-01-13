@@ -1,8 +1,12 @@
 <script>
   import { onMount } from "svelte";
   import "leaflet/dist/leaflet.css";
+  import {
+    convertCountries
+  } from "$components/helpers/textUtils.js";
 
   let mapContainer;
+  let compassContainer;
   let map;
   let L;
 
@@ -11,6 +15,9 @@
   let allDots = [];
   const activeLabelMarkers = new Map();
   const activeDotMarkers = new Map();
+
+  // Cache for the dynamic person icons
+  const iconCache = new Map();
 
   let zoom = 1;
   let viewportLeft = $state(20);
@@ -24,13 +31,20 @@
 
   // --- COMPASS ---
   function updateCompassViewport() {
-    if (!map) return;
+    if (!map || !compassContainer) return;
+
+    // Get actual rendered size
+    const cw = compassContainer.offsetWidth;
+
+    // Calculate internal proportions based on original design (20px pad on 180px box = ~11.1%)
+    const padding = cw * (20 / 180);
+    const compassInnerSize = cw - (padding * 2);
+
     const bounds = map.getBounds();
     const mapBounds = [
       [0, 0],
       [-256, 256]
     ];
-    const compassInnerSize = 140;
 
     const north = bounds.getNorth();
     const south = bounds.getSouth();
@@ -42,13 +56,14 @@
     const rightPercent =
       (east - mapBounds[0][1]) / (mapBounds[1][1] - mapBounds[0][1]);
 
+    // Update Math to use dynamic padding and innerSize
     viewportLeft = Math.max(
-      20,
-      Math.min(160, leftPercent * compassInnerSize + 20)
+      padding,
+      Math.min(padding + compassInnerSize, leftPercent * compassInnerSize + padding)
     );
     const right = Math.max(
-      20,
-      Math.min(160, rightPercent * compassInnerSize + 20)
+      padding,
+      Math.min(padding + compassInnerSize, rightPercent * compassInnerSize + padding)
     );
     viewportWidth = Math.max(5, right - viewportLeft);
 
@@ -58,27 +73,24 @@
       (mapBounds[0][0] - south) / (mapBounds[0][0] - mapBounds[1][0]);
 
     viewportTop = Math.max(
-      20,
-      Math.min(160, topPercent * compassInnerSize + 20)
+      padding,
+      Math.min(padding + compassInnerSize, topPercent * compassInnerSize + padding)
     );
     const bottom = Math.max(
-      20,
-      Math.min(160, bottomPercent * compassInnerSize + 20)
+      padding,
+      Math.min(padding + compassInnerSize, bottomPercent * compassInnerSize + padding)
     );
     viewportHeight = Math.max(5, bottom - viewportTop);
   }
 
-
-
-
-// Add these variables for the debug panel
+  // Add these variables for the debug panel
   let clickX = $state(0);
   let clickY = $state(0);
   let normalizedX = $state(0);
   let normalizedY = $state(0);
-  let showDebug = true;
+  let showDebug = false;
 
- onMount(async () => {
+  onMount(async () => {
     L = (await import("leaflet")).default;
 
     // 1. Resolve Fonts
@@ -97,14 +109,21 @@
     const tileBounds = [[0, 0], [-mapSize, mapSize]];
     const expandedBounds = [[padding, -padding], [-mapSize - padding, mapSize + padding]];
 
+    // --- NEW ZOOM LOGIC ---
+    // Check width and set initial zoom
+    const w = window.innerWidth;
+    const initialZoom = w < 500 ? 0 : w < 900 ? 1 : 2;
+    zoom = initialZoom;
+    // ----------------------
+
     map = L.map(mapContainer, {
       crs: L.CRS.Simple,
-      minZoom: 2,
+      minZoom: 0,
       maxZoom: 6,
       zoomControl: false,
       preferCanvas: true,
       center: [-128, 128],
-      zoom: 2,
+      zoom: initialZoom,
       maxBounds: expandedBounds,
       maxBoundsViscosity: 0.8,
       wheelDebounceTime: 40,
@@ -140,8 +159,6 @@
       errorTileUrl: ""
     }).addTo(map);
 
-    map.fitBounds(tileBounds);
-
     // --- C. INTERACTION & DEBUG ---
 
     // Debug Click Handler
@@ -155,7 +172,6 @@
     });
 
     // --- NEW: FUZZY DOT CLICKING ---
-    // If the user misses a dot by a few pixels, we find the closest one and open it.
     map.on("click", (e) => {
       const clickPoint = e.containerPoint;
       const CLICK_THRESHOLD = 30;
@@ -180,32 +196,6 @@
       }
     });
 
-    // --- NEW: HIGHLIGHT ACTIVE DOT ---
-    map.on("popupopen", (e) => {
-      const marker = e.popup._source;
-      if (marker && marker.setStyle) {
-        marker.setStyle({
-          color: "#ffe06e",     // L2 Yellow
-          fillColor: "#ffe06e",
-          fillOpacity: 1.0,
-          weight: 2
-        });
-        marker.bringToFront();
-      }
-    });
-
-    map.on("popupclose", (e) => {
-      const marker = e.popup._source;
-      if (marker && marker.setStyle) {
-        marker.setStyle({
-          color: "#000000",
-          fillColor: "#000000",
-          fillOpacity: 0.2,
-          weight: 0.1
-        });
-      }
-    });
-
     // 4. Load Data
     await loadData();
 
@@ -221,6 +211,10 @@
 
     map.on("moveend zoomend", triggerRender);
     map.on("move zoom", updateCompassViewport);
+
+    // Trigger render on popup events to swap icons (active/inactive)
+    map.on("popupopen", triggerRender);
+    map.on("popupclose", triggerRender);
 
     document.fonts.ready.then(triggerRender);
   });
@@ -270,6 +264,10 @@
   function getFontSize(type, currentZoom) {
     if (type === "l1") {
       switch (Math.floor(currentZoom)) {
+      case 0:
+          return 5;
+        case 1:
+          return 11;
         case 2:
           return 12;
         case 3:
@@ -348,22 +346,22 @@
   }
 
   // --- RENDER VIEWPORT ---
- function renderViewport() {
+  function renderViewport() {
     if (!map) return;
 
     zoom = map.getZoom();
+
     const currentZoomInt = Math.floor(zoom);
     const bounds = map.getBounds();
     // Keep the pad to ensure labels don't pop in/out instantly at the edge
     const paddedBounds = bounds.pad(0.1);
 
     // --- A. DOTS RENDERING ---
-    // (Dots logic remains unchanged: Show based on bounds)
     const visibleDotIndices = new Set();
+
     // Only show dots starting at Zoom 3
-    if (zoom >= 3) {
-      // Show all dots at high zoom, cap at 15k for performance low zoom
-      const maxDots = zoom >= 5 ? Infinity : 15000;
+    if (zoom >= 0) {
+      const maxDots = zoom*200; //zoom >= 5 ? 1000 : 300;
       let dotsCount = 0;
       for (let i = 0; i < allDots.length; i++) {
         if (dotsCount >= maxDots) break;
@@ -382,34 +380,87 @@
       }
     }
 
-    const currentRadius = Math.max(1, zoom / 2);
+    // 1. Calculate Size based on Zoom
+    const currentSize = Math.max(22, Math.floor(zoom * 7));
+
+    // 2. Icon Caching Helper
+    function getCachedIcon(baseName, isActive) {
+      const stateSuffix = isActive ? "-active" : "";
+      const cacheKey = `${baseName}${stateSuffix}-${currentSize}`;
+
+      if (iconCache.has(cacheKey)) {
+        return iconCache.get(cacheKey);
+      }
+
+      const icon = L.icon({
+        iconUrl: `assets/icons/${baseName}${stateSuffix}.png`,
+        iconSize: [currentSize, currentSize],
+        iconAnchor: [currentSize / 2, currentSize / 2],
+        popupAnchor: [0, -currentSize / 2],
+        className: "interactive-dot"
+      });
+
+      iconCache.set(cacheKey, icon);
+      return icon;
+    }
 
     for (const index of visibleDotIndices) {
+      // -- DETERMINE IMAGE PROPERTIES --
+      const p = allDots[index];
+      const age = p[3]; // Age is index 3
+      const sexChar = p[5]; // Sex is index 5
+
+      // Logic: Age Group
+      let ageGroup = "young";
+      if (age > 60) ageGroup = "older";
+      else if (age > 40) ageGroup = "old";
+      else if (age > 25) ageGroup = "mid";
+
+      // Logic: Sex
+      const sex = sexChar === "m" ? "male" : "female";
+
+      // Logic: Random Variant (0-5)
+      // Use index to ensure consistent randomness for the same person
+      const variant = index % 6;
+
+      // Final Filename Base: e.g., "mid1-male-3"
+      const iconBaseName = `${ageGroup}-${sex}-${variant}`;
+
       if (activeDotMarkers.has(index)) {
+        // Update existing marker
         const marker = activeDotMarkers.get(index);
-        marker.setRadius(currentRadius);
+        const isActive = marker.isPopupOpen();
+
+        // Get the specific icon from cache
+        const icon = getCachedIcon(iconBaseName, isActive);
+
+        marker.setIcon(icon);
+        marker.setZIndexOffset(isActive ? 1000 : 10);
         marker.getElement()?.classList.add("map-element-visible");
+
       } else {
-        const p = allDots[index];
-        const marker = L.circleMarker([-(p[1] * 256), p[0] * 256], {
-          radius: currentRadius,
-          color: "#000000",
-          weight: 0.1,
-          fillColor: "#000000",
-          fillOpacity: 0.2,
-          className: "interactive-dot"
-        }).bindPopup(`${p[2]}`);
+        // Create NEW Marker
+        const icon = getCachedIcon(iconBaseName, false);
+        const marker = L.marker([-(p[1] * 256), p[0] * 256], {
+          icon: icon,
+          zIndexOffset: 10
+        })
+        .bindPopup(cleanPopup(p));
+
         marker.addTo(map);
         activeDotMarkers.set(index, marker);
+
         requestAnimationFrame(() =>
           marker.getElement()?.classList.add("map-element-visible")
         );
       }
     }
 
+    // Cleanup invisible markers
     for (const [index, marker] of activeDotMarkers) {
       if (!visibleDotIndices.has(index)) {
-        marker.getElement()?.classList.remove("map-element-visible");
+        const el = marker.getElement();
+        if(el) el.classList.remove("map-element-visible");
         activeDotMarkers.delete(index);
         setTimeout(() => {
           if (map.hasLayer(marker)) map.removeLayer(marker);
@@ -417,7 +468,7 @@
       }
     }
 
-    // --- B. LABELS RENDERING (NO COLLISION) ---
+    // --- B. LABELS RENDERING ---
 
     // 1. Filter: Which types are allowed at this zoom?
     let labelsToConsider = allLabels.filter((l) => {
@@ -470,9 +521,6 @@
 
       const calcWidth = maxLineWidth + 10;
       const calcHeight = baseLineHeight * lines.length * 1.2;
-
-      // --- NO COLLISION CHECKS ---
-      // We immediately proceed to add/update the label
 
       const labelId = `${l.text}_${l.type}`;
       validLabelIds.add(labelId);
@@ -531,6 +579,11 @@
     }
   }
 
+  function cleanPopup(p) {
+    const info = `${Math.round(p[3])} / ${p[5].toUpperCase()} / ${convertCountries(p[4])}<br><span>${p[6].charAt(0).toUpperCase() + p[6].slice(1)} / ${p[7] == "y" ? "Parent" : "Not a parent"}</span>`
+    return "<div class='info'>" + info + "</div><div class='quote'>" + p[2] + "</div>";
+  }
+
 
 
   // Updated click handler
@@ -564,7 +617,7 @@
     bind:this={mapContainer}
   ></div>
 
-  <div class="compass">
+  <div class="compass" bind:this={compassContainer}>
     <div
       class="viewport-box"
       style="left: {viewportLeft}px; top: {viewportTop}px; width: {viewportWidth}px; height: {viewportHeight}px;"
@@ -577,10 +630,11 @@
     <div class="compassLabel xlabel right">More agency</div>
   </div>
 </div>
-
+{#if showDebug}
 <textarea class="debug-panel">
     "x": {normalizedX.toFixed(4)},
     "y": {normalizedY.toFixed(4)},</textarea>
+{/if}
 
 <style>
   .debug-panel {
@@ -639,19 +693,24 @@
     background-repeat: repeat;
   }
 
-  /* COMPASS */
+ /* COMPASS */
   .compass {
     position: absolute;
     left: 10px;
     bottom: 10px;
-    width: 180px;
-    height: 180px;
+
+    /* Responsive sizing logic */
+    width: clamp(130px, 18vw, 180px);
+    height: clamp(130px, 18vw, 180px);
+
     background: #002436;
     z-index: 999;
     border: 2px solid #264a5c;
     border-radius: 4px;
     overflow: hidden;
+    font-family:  var(--sans);
   }
+
   .viewport-box {
     position: absolute;
     background: rgba(158, 255, 220, 0.3);
@@ -659,68 +718,77 @@
     z-index: 50;
     border-radius: 1px;
   }
+
+  /* Update Axis to adjust to dynamic padding/size */
   .yaxis {
     position: absolute;
     left: 50%;
-    top: 20px;
+    /* Use percentage to stay proportional */
+    top: 11%;
+    height: 78%;
     border-left: 1px solid rgb(232, 249, 255);
-    height: calc(100% - 40px);
     z-index: 60;
   }
   .xaxis {
     position: absolute;
     top: 50%;
-    left: 20px;
+    /* Use percentage to stay proportional */
+    left: 11%;
+    width: 78%;
     border-top: 1px solid rgb(232, 249, 255);
-    width: calc(100% - 40px);
     z-index: 60;
   }
+
   .compassLabel {
     position: absolute;
-    font-size: 12px;
-    line-height: 11px;
+    /* Scale font size slightly between 10px and 12px */
+    font-size: clamp(10px, 1.2vw, 12px);
+    line-height: 1;
     font-weight: 300;
     color: rgb(232, 249, 255);
     z-index: 70;
   }
+
+  /* Keep these mostly the same, just reduced fixed pixels slightly */
   .compassLabel.ylabel {
     width: 100%;
     text-align: center;
   }
   .compassLabel.xlabel {
-    top: calc(50% - 10px);
-    transform: translateY(-50%);
+    bottom: calc(50% + 3px);
     text-align: center;
+    max-width: 45%;
   }
   .compassLabel.top {
-    top: 5px;
+    top: 3%;
   }
   .compassLabel.bottom {
-    bottom: 5px;
+    bottom: 3%;
   }
   .compassLabel.left {
-    left: 5px;
+    left: 3%;
     text-align: left;
   }
   .compassLabel.right {
-    right: 5px;
+    right: 3%;
     text-align: right;
   }
 
   /* ELEMENTS */
   :global(.map-label),
   :global(.interactive-dot) {
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.4s ease-in-out;
   }
   :global(.map-element-visible) {
     opacity: 1 !important;
   }
-  :global(.interactive-dot) {
+ :global(.interactive-dot) {
     cursor: pointer;
     transition:
       opacity 0.4s,
-      r 0.2s;
+      width 0.2s,   /* smooth scaling on zoom */
+      height 0.2s;
   }
 
   :global(.map-label) {
@@ -799,4 +867,5 @@
       -1px 1px 0 #000,
       0 1px 3px rgba(0, 0, 0, 1);
   }
+
 </style>

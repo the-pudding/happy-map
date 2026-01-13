@@ -1,7 +1,7 @@
 <script>
 	let {
-		title = "Title TK",
-		description = "Description TK",
+		title = "Happy map",
+		description = "100,000 instances of human happiness, mapped",
 		url = "https://pudding.cool",
 		keywords = "",
 		preloadFont = []

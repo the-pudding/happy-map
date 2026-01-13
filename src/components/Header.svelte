@@ -18,9 +18,9 @@
 		z-index: 999999;
 	}
 	.wordmark {
-		max-width: 14em;
-		margin-left: 20px;
-		padding: 32px 0;
+		max-width: 12em;
+		margin-left: 10px;
+		padding: 20px 0;
 		transform: rotate(-4deg);
 	}
 
