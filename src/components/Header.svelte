@@ -15,7 +15,7 @@
 	header {
 		display: block;
 		position: absolute;
-		z-index: 999999;
+		z-index: 999;
 	}
 	.wordmark {
 		max-width: 12em;

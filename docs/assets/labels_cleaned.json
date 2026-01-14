@@ -128,7 +128,7 @@
   {
     "text": "Career Experience",
     "x": 0.38707024808033513,
-    "y": 0.7454974173112876,
+    "y": 0.7704974173112876,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -145,8 +145,8 @@
   },
   {
     "text": "Work Achievement",
-    "x": 0.4543,
-    "y": 0.7043,
+    "x": 0.4343,
+    "y": 0.673,
     "type": "l2",
     "priority": 5,
     "zoom_min": 3,
@@ -223,15 +223,6 @@
     "priority": 5,
     "zoom_min": 3,
     "city_count": 2027
-  },
-  {
-    "text": "Achievement",
-    "x": 0.5722436606460857,
-    "y": 0.7080417907947733,
-    "type": "l2",
-    "priority": 5,
-    "zoom_min": 3,
-    "city_count": 1206
   },
   {
     "text": "School Experience",
@@ -443,7 +434,7 @@
   {
     "text": "Career<br>Opportunities",
     "x": 0.385419641683558,
-    "y": 0.7417965593948554,
+    "y": 0.7317965593948554,
     "type": "l3",
     "priority": 3,
     "zoom_min": 5,
@@ -496,7 +487,7 @@
   },
   {
     "text": "Project & Task Completion",
-        "x": 0.5063,
+    "x": 0.5063,
     "y": 0.7305,
     "type": "l3",
     "priority": 3,
@@ -505,7 +496,7 @@
   },
   {
     "text": "Project & Task Completion",
-          "x": 0.4546,
+    "x": 0.4546,
     "y": 0.6101,
     "type": "l3",
     "priority": 3,

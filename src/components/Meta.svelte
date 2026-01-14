@@ -1,9 +1,9 @@
 <script>
 	let {
 		title = "Happy map",
-		description = "100,000 instances of human happiness, mapped",
-		url = "https://pudding.cool",
-		keywords = "",
+		description = "100,000 moments of human happiness, mapped",
+		url = "https://pudding.cool/2026/01/happy-map",
+		keywords = "Happy Map, HappyDB visualization, map of happiness, global happiness data, Alvin Chang, interactive data visualization, crowdsourced happy moments, mapping human emotion",
 		preloadFont = []
 	} = $props();
 </script>

@@ -157,8 +157,9 @@ if __name__ == "__main__":
     INPUT_DIRECTORY = "."
 
     # Fantasy color options for active state:
-    HIGHLIGHT_COLOR = (255, 46, 178)    # Your pink/magenta
-    BLEND_FACTOR = 0.4  # Reduced for subtler effect
+    # HIGHLIGHT_COLOR = (255, 46, 178)    # Your pink/magenta
+    HIGHLIGHT_COLOR = (252, 186, 3)    #  blue
+    BLEND_FACTOR = 0.5  # Reduced for subtler effect
 
     if len(sys.argv) > 1:
         INPUT_DIRECTORY = sys.argv[1]
