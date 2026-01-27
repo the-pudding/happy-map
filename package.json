@@ -41,6 +41,8 @@
 	},
 	"browserslist": "> 0.5%, last 4 versions, not ie <= 11, not ie_mob <= 11",
 	"dependencies": {
+		"@luma.gl/core": "^9.2.6",
+		"deck.gl": "^9.2.6",
 		"leaflet": "^1.9.4"
 	}
 }

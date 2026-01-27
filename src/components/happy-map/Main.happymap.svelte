@@ -1,5 +1,5 @@
 <script>
-	import Map from "$components/happy-map/Main.map.svelte";
+	import Map from "$components/happy-map/Map.happymap.svelte";
 </script>
 
 

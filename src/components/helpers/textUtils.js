@@ -106,3 +106,58 @@ export function convertCountries(c) {
 
     return country_map[c] || "--";
 }
+
+
+export function getFontSize(type, currentZoom) {
+    if (type === "l1") {
+      switch (Math.floor(currentZoom)) {
+        case 0:
+          return 5;
+        case 1:
+          return 11;
+        case 2:
+          return 12;
+        case 3:
+          return 14;
+        case 4:
+          return 25;
+        case 5:
+          return 30;
+        case 6:
+          return 22;
+        default:
+          return 11;
+      }
+    } else if (type === "l2") {
+      switch (Math.floor(currentZoom)) {
+        case 2:
+          return 9;
+        case 3:
+          return 12;
+        case 4:
+          return 19;
+        case 5:
+          return 23;
+        case 6:
+          return 28;
+        default:
+          return 9;
+      }
+    } else if (type === "l3") {
+      switch (Math.floor(currentZoom)) {
+        case 2:
+          return 9;
+        case 3:
+          return 11;
+        case 4:
+          return 13;
+        case 5:
+          return 18;
+        case 6:
+          return 22;
+        default:
+          return 9;
+      }
+    }
+    return 10;
+  }
