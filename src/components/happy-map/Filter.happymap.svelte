@@ -1,0 +1,249 @@
+<script>
+  let { filters = $bindable(), isOpen = $bindable() } = $props();
+
+  function toggleGroup(groupName, value) {
+    const keys = Object.keys(filters[groupName]);
+    keys.forEach((key) => (filters[groupName][key] = value));
+  }
+
+  function close() {
+    isOpen = false;
+  }
+</script>
+
+{#if isOpen}
+  <div class="filterPanel open">
+    <button class="close-panel-btn" onclick={close}>×</button>
+    <h4>Filter Responses</h4>
+
+    <div class="filter-group">
+      <div class="group-header">
+        <div class="group-title">Location</div>
+        <div class="group-actions">
+          <button onclick={() => toggleGroup("location", true)}>All</button>
+          <button onclick={() => toggleGroup("location", false)}>None</button>
+        </div>
+      </div>
+      <label>
+        <input type="checkbox" bind:checked={filters.location.us} /> U.S.
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.location.nonUs} /> Non-U.S.
+      </label>
+    </div>
+
+    <div class="filter-group">
+      <div class="group-header">
+        <div class="group-title">Age</div>
+        <div class="group-actions">
+          <button onclick={() => toggleGroup("age", true)}>All</button>
+          <button onclick={() => toggleGroup("age", false)}>None</button>
+        </div>
+      </div>
+      <label>
+        <input type="checkbox" bind:checked={filters.age.range1} /> Under 20
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.age.range2} /> 20 - 29
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.age.range3} /> 30 - 39
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.age.range4} /> 40 - 49
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.age.range5} /> 50 - 59
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.age.range6} /> 60 - 69
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.age.range7} /> 70+
+      </label>
+    </div>
+
+    <div class="filter-group">
+      <div class="group-header">
+        <div class="group-title">Sex</div>
+        <div class="group-actions">
+          <button onclick={() => toggleGroup("sex", true)}>All</button>
+          <button onclick={() => toggleGroup("sex", false)}>None</button>
+        </div>
+      </div>
+      <label>
+        <input type="checkbox" bind:checked={filters.sex.m} /> Male
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.sex.f} /> Female
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.sex.o} /> Other
+      </label>
+    </div>
+
+    <div class="filter-group">
+      <div class="group-header">
+        <div class="group-title">Parental Status</div>
+        <div class="group-actions">
+          <button onclick={() => toggleGroup("parent", true)}>All</button>
+          <button onclick={() => toggleGroup("parent", false)}>None</button>
+        </div>
+      </div>
+      <label>
+        <input type="checkbox" bind:checked={filters.parent.yes} /> Parent
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.parent.no} /> Not Parent
+      </label>
+    </div>
+
+    <div class="filter-group">
+      <div class="group-header">
+        <div class="group-title">Marital Status</div>
+        <div class="group-actions">
+          <button onclick={() => toggleGroup("marital", true)}>All</button>
+          <button onclick={() => toggleGroup("marital", false)}>None</button>
+        </div>
+      </div>
+      <label>
+        <input type="checkbox" bind:checked={filters.marital.single} /> Single
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.marital.married} /> Married
+      </label>
+      <label>
+        <input type="checkbox" bind:checked={filters.marital.divorced} /> Divorced
+      </label>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .filterPanel {
+    font-family: var(--sans);
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    width: 240px;
+    padding: 60px 15px 15px;
+    background: #001126;
+    color: white;
+    z-index: 99999;
+    border-left: 1px solid #264a5c;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+  }
+
+  .filterPanel h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 1px solid #264a5c;
+    padding-bottom: 6px;
+  }
+
+  .filter-group {
+    margin-bottom: 15px;
+  }
+
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .group-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #9effdc;
+    font-weight: bold;
+  }
+
+  .group-actions button {
+    background: none;
+    border: none;
+    color: #5aa6cf;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 0 4px;
+    text-transform: uppercase;
+  }
+
+  .group-actions button:hover {
+    color: white;
+    text-decoration: underline;
+  }
+
+  .filterPanel label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #cbd5e1;
+    user-select: none;
+  }
+
+  .filterPanel label:hover {
+    color: white;
+  }
+
+  .filterPanel input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #5aa6cf;
+    border-radius: 3px;
+    background-color: rgba(0, 36, 54, 0.5);
+    display: grid;
+    place-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .filterPanel input[type="checkbox"]:hover {
+    border-color: #9effdc;
+    background-color: rgba(158, 255, 220, 0.1);
+  }
+
+  .filterPanel input[type="checkbox"]::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    transform: scale(0);
+    transition: 0.1s transform;
+    background-color: #001126;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    box-shadow: inset 1em 1em #001126;
+  }
+
+  .filterPanel input[type="checkbox"]:checked {
+    background-color: #9effdc;
+    border-color: #9effdc;
+  }
+
+  .filterPanel input[type="checkbox"]:checked::before {
+    transform: scale(1);
+  }
+
+  .close-panel-btn {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    background: none;
+    border: none;
+    color: #5aa6cf;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+  }
+</style>

@@ -5,304 +5,133 @@
 
 /* colors defined in variables.css */
 :root {
-	/* font */
-	--sans:
-		"Atlas Grotesk", -apple-system, BlinkMacSystemFont, Helvetica, Arial,
-		sans-serif;
-	--serif: "Tiempos Text", Iowan Old Style, Times New Roman, Times, serif;
-	--mono: Menlo, Consolas, Monaco, monospace;
+  /* font */
+  --sans:
+    "Atlas Grotesk", -apple-system, BlinkMacSystemFont, Helvetica, Arial,
+    sans-serif;
+  --serif: "Tiempos Text", Iowan Old Style, Times New Roman, Times, serif;
+  --mono: Menlo, Consolas, Monaco, monospace;
 
-	/* z-index */
-	--z-bottom: -100;
-	--z-middle: 0;
-	--z-top: 100;
-	--z-overlay: 1000;
+  /* z-index */
+  --z-bottom: -100;
+  --z-middle: 0;
+  --z-top: 100;
+  --z-overlay: 1000;
 
-	/* presets (used in reset.css) */
-	--border-radius: 2px;
-	--font-body: var(--serif);
-	--font-form: var(--sans);
-	--color-bg: var(--color-white);
-	--color-fg: var(--color-gray-900);
-	--color-primary: var(--color-black);
-	--color-link: var(--color-black);
-	--color-link-hover: var(--color-black);
-	--color-focus: var(--color-red);
-	--color-mark: var(--color-yellow);
-	--color-selection: var(--color-gray-300);
-	--color-border: var(--color-gray-300);
-	--color-button-bg: var(--color-gray-300);
-	--color-button-fg: var(--color-gray-900);
-	--color-button-hover: var(--color-gray-400);
-	--color-input-bg: var(--color-gray-50);
-	--color-input-fg: var(--color-gray-900);
-	--color-placeholder: var(--color-gray-500);
+  /* presets (used in reset.css) */
+  --border-radius: 2px;
+  --font-body: var(--serif);
+  --font-form: var(--sans);
+  --color-bg: var(--color-white);
+  --color-fg: var(--color-gray-900);
+  --color-primary: var(--color-black);
+  --color-link: var(--color-black);
+  --color-link-hover: var(--color-black);
+  --color-focus: var(--color-red);
+  --color-mark: var(--color-yellow);
+  --color-selection: var(--color-gray-300);
+  --color-border: var(--color-gray-300);
+  --color-button-bg: var(--color-gray-300);
+  --color-button-fg: var(--color-gray-900);
+  --color-button-hover: var(--color-gray-400);
+  --color-input-bg: var(--color-gray-50);
+  --color-input-fg: var(--color-gray-900);
+  --color-placeholder: var(--color-gray-500);
 
-	/* "1" second duration */
-	--1s: 1ms;
+  /* "1" second duration */
+  --1s: 1ms;
 }
-
-/* dark theme */
-/* @media screen and (prefers-color-scheme:dark) {
-	:root {
-
-	}
-} */
 
 @media screen and (prefers-reduced-motion: no-preference) {
-	:root {
-		--1s: 1s;
-	}
+  :root {
+    --1s: 1s;
+  }
 }
 
-h1 {
-	font-size: var(--48px, 48px);
-}
+/* ============================================
+   Base Typography
+   ============================================ */
 
-h2 {
-	font-size: var(--36px, 36px);
-}
-
-h3 {
-	font-size: var(--28px, 28px);
-}
-
-h4 {
-	font-size: var(--24px, 24px);
-}
-
-h5 {
-	font-size: var(--22px, 22px);
-}
-
-h6 {
-	font-size: var(--20px, 20px);
-}
+h1 { font-size: var(--48px, 48px); }
+h2 { font-size: var(--36px, 36px); }
+h3 { font-size: var(--28px, 28px); }
+h4 { font-size: var(--24px, 24px); }
+h5 { font-size: var(--22px, 22px); }
+h6 { font-size: var(--20px, 20px); }
 
 svg {
-	display: block;
-	width: 100%;
-	height: auto;
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
-/* 1. The main bubble box */
-.leaflet-popup-content-wrapper {
-	border-radius: 2px !important;
-	background: #fff !important;
-	border: 2px solid #000 !important;
-	box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5) !important;
-	/* Ensure z-index is lower than the tip */
-	z-index: 1;
+/* ============================================
+   Global Layout
+   ============================================ */
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
 }
 
-/* 2. The Container holding the tip */
-.leaflet-popup-tip-container {
-	/* Pull the tip up MORE to overlap the 2px border.
-     -3px ensures it crosses the line. */
-	margin-top: -3px !important;
-	/* Ensure the tip sits on top of the wrapper border */
-	z-index: 10 !important;
+.wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #1e3d54;
+  z-index: 1;
+  overflow: hidden;
 }
 
-/* 3. The Triangle Tip itself */
-.leaflet-popup-tip {
-	background: #fff !important;
-
-	/* Borders only on the bottom part of the 'V' */
-	border-right: 2px solid #000 !important;
-	border-bottom: 2px solid #000 !important;
-	border-top: none !important;
-	border-left: none !important;
-
-	box-shadow: none !important;
-}
-.leaflet-container {
-	font-family: var(--serif) !important;
-}
-.leaflet-popup-content {
-	margin: 10px 24px 10px 10px !important;
-}
-.leaflet-popup-close-button {
-	color: black !important;
-}
-.leaflet-popup-close-button span {
-	position: absolute;
-	top: 4px;
-	right: 0px;
-	width: 100%;
-	height: 100%;
-	font-weight: bold;
+.deck-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.info {
-	font-weight: bold;
-	margin-bottom: 10px;
-}
-.info span {
-	font-weight: normal;
-	font-style: italic;
+/* ============================================
+   UI Buttons
+   ============================================ */
+
+.filterButton,
+#showinfo {
+  position: absolute;
+  right: 10px;
+  background: #002436;
+  border: 1px solid #264a5c;
+  color: white;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--sans);
+  z-index: 9;
+  border-radius: 4px;
+  font-size: 15px;
 }
 
-.introText {
-	position: absolute;
-	z-index: 999999;
-	background: #001124;
-	left: 20px;
-	bottom: 20px;
-	/* transform: translate(-50%, 0%); */
-	width: 320px;
-	padding: 30px;
-	font-family: var(--sans);
-	font-size: 15px;
-	color: white;
-}
+.filterButton { top: 10px; }
+#showinfo { top: 50px; }
 
-.introText h1,
-.introText .byline {
-	font-size: 13px;
-	line-height: 15px;
-	margin: 0 0 20px 0;
-	text-align: center;
-	text-decoration: none;
-}
 
-.introText a {
-	color: #eb8aff;
-	text-decoration: none;
-	border-bottom: 1px dotted #57bff2;
-}
-.introText .byline a {
-	color: #eb8aff !important;
-	border-bottom: 1px dotted #f263ff;
-}
-.introText a:hover {
-	color: #68ddde;
-	text-decoration: none;
-	border-bottom: 1px solid #4da7a8;
-}
-.introText .byline a:hover {
-	color: #f263ff !important;
-	border-bottom: 1px dotted #b200c2;
-}
-.introText h1 {
-	font-size: 20px;
-	color: #ffec70;
-}
-.introText .compass {
-	position: relative;
-	margin: 30px auto 0px;
-	width: 100%;
-	height: 130px;
-	left: 0;
-}
-.introText .yaxis {
-	top: 15%;
-	height: 72%;
-}
-.introText p {
-	font-size: 13px;
-	line-height: 22px;
-	color: #dff4f5;
-}
+/* ============================================
+   Debug Panel (development only)
+   ============================================ */
 
-.introBody p .introSpan {
-	color: #ffec70;
-}
-.cite {
-	font-size: 11px;
-	line-height: 14px;
-	margin-top: 10px;
-	color: #8db1b3;
-	font-style: italic;
-}
-.buttonContainer {
-	width: 100%;
-	height: 40px;
-	position: relative;
-}
-.introText button {
-	position: absolute;
-	width: calc(50% - 5px);
-	background: #1badf5;
-	color: white;
-	bottom: 0;
-	height: 100%;
-	/* font-weight: bold; */
-}
-.introText button:hover {
-	background: #1682b8;
-}
-.introText button.next {
-	right: 0;
-}
-.introText button.prev {
-	left: 0;
-	background: #646a6e;
-}
 .debug-panel {
-	position: fixed;
-	bottom: 10px;
-	right: 10px;
-	background: rgba(0, 0, 0, 0.8);
-	color: white;
-	padding: 10px;
-	border-radius: 4px;
-	font-family: monospace;
-	font-size: 14px;
-	z-index: 999999999;
-	min-width: 150px;
-}
-
-/* Typography within Info Panel */
-.infoPanel h1 {
-	font-size: 22px;
-	color: #ffec70;
-	margin: 0 0 5px 0;
-	line-height: 1;
-}
-.infoPanel .byline {
-	font-size: 13px;
-	color: #8db1b3;
-	margin-bottom: 25px;
-	border-bottom: 1px solid #264a5c;
-	padding-bottom: 15px;
-}
-.infoPanel a {
-	color: #57bff2;
-	text-decoration: none;
-	border-bottom: 1px dotted #57bff2;
-}
-.infoPanel a:hover {
-	color: #68ddde;
-	border-bottom: 1px solid #4da7a8;
-}
-
-.infoPanel h4 {
-	margin: 25px 0 10px 0;
-	font-size: 13px;
-	font-weight: bold;
-	color: #9effdc;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-	border-bottom: 1px solid #264a5c;
-	padding-bottom: 5px;
-}
-
-.infoPanel p {
-	font-size: 13px;
-	line-height: 1.5;
-	color: #cbd5e1;
-	margin-bottom: 15px;
-}
-.infoPanel p span {
-	color: #ffec70;
-}
-
-.infoPanel .cite {
-	font-size: 12px;
-	color: #8db1b3;
-	font-style: italic;
-}
-.infoPanel .links {
-	font-size: 12px;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  z-index: 999999999;
+  min-width: 150px;
 }

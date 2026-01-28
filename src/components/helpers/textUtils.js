@@ -161,3 +161,115 @@ export function getFontSize(type, currentZoom) {
     }
     return 10;
   }
+
+export function matchesFilters(p, filters) {
+  const isUS = p[4] === "USA";
+  if (isUS && !filters.location.us) return false;
+  if (!isUS && !filters.location.nonUs) return false;
+
+  const age = p[3];
+  if (isNaN(age)) return false;
+  if (age < 20 && !filters.age.range1) return false;
+  else if (age >= 20 && age < 30 && !filters.age.range2) return false;
+  else if (age >= 30 && age < 40 && !filters.age.range3) return false;
+  else if (age >= 40 && age < 50 && !filters.age.range4) return false;
+  else if (age >= 50 && age < 60 && !filters.age.range5) return false;
+  else if (age >= 60 && age < 70 && !filters.age.range6) return false;
+  else if (age >= 70 && age < 100 && !filters.age.range7) return false;
+  else if (age >= 100) return false;
+
+  const sex = p[5];
+  if (sex === "m" && !filters.sex.m) return false;
+  else if (sex === "f" && !filters.sex.f) return false;
+  else if (sex !== "m" && sex !== "f" && !filters.sex.o) return false;
+
+  const isParent = p[7] === "y";
+  if (isParent && !filters.parent.yes) return false;
+  if (!isParent && !filters.parent.no) return false;
+
+  const marital = p[6].toLowerCase();
+  if (marital.includes("single") && !filters.marital.single) return false;
+  else if (marital.includes("married") && !filters.marital.married) return false;
+  else if (marital.includes("divorced") && !filters.marital.divorced) return false;
+
+  return true;
+}
+
+export function getIconName(p) {
+  const age = p[3];
+  const sexChar = p[5];
+  let ageGroup = "young";
+  if (age > 60) ageGroup = "older";
+  else if (age > 40) ageGroup = "old";
+  else if (age > 25) ageGroup = "mid";
+  const sex = sexChar === "m" ? "male" : "female";
+  const variant = (p._stableId || 0) % 6;
+  return `${ageGroup}-${sex}-${variant}`;
+}
+
+export function getLabelSize(type, zoom) {
+  if (type === "l1") {
+    if (zoom < 1) return 10;
+    if (zoom < 2) return 12;
+    if (zoom < 3) return 16;
+    if (zoom < 4) return 22;
+    if (zoom < 5) return 30;
+    return 40;
+  }
+  if (type === "l2") {
+    if (zoom < 4) return 12;
+    if (zoom < 5) return 18;
+    return 24;
+  }
+  // l3
+  if (zoom < 5) return 10;
+  if (zoom < 6) return 14;
+  return 18;
+}
+
+export function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex]
+    ];
+  }
+  return array;
+}
+
+export function getInitialZoom() {
+  if (typeof window === "undefined") return 2;
+  const w = window.innerWidth;
+  return w < 500 ? 0 : w < 900 ? 1 : 2;
+}
+
+export const DEFAULT_FILTERS = {
+  location: { us: true, nonUs: true },
+  age: {
+    range1: true,
+    range2: true,
+    range3: true,
+    range4: true,
+    range5: true,
+    range6: true,
+    range7: true
+  },
+  sex: { m: true, f: true, o: true },
+  parent: { yes: true, no: true },
+  marital: { single: true, married: true, divorced: true }
+};
+
+export const OUTLINE_OFFSETS = [
+  [-2, -2],
+  [-2, 0],
+  [-2, 2],
+  [0, -2],
+  [0, 2],
+  [2, -2],
+  [2, 0],
+  [2, 2],
+  [0, 3]  // Extra offset for drop shadow
+];
