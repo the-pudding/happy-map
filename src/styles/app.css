@@ -3,6 +3,7 @@
 @import "font.css";
 @import "reset.css";
 
+
 /* colors defined in variables.css */
 :root {
   /* font */
@@ -84,7 +85,7 @@ html {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #1e3d54;
+  background-color: #486C94 !important;
   z-index: 1;
   overflow: hidden;
 }
@@ -98,24 +99,59 @@ html {
 /* ============================================
    UI Buttons
    ============================================ */
-
 .filterButton,
 #showinfo {
   position: absolute;
   right: 10px;
-  background: #002436;
-  border: 1px solid #264a5c;
+  /* background: #36577d; */
+  background: #36577d;
   color: white;
-  padding: 8px 12px;
+  padding: 10px 15px;
   cursor: pointer;
-  font-family: var(--sans);
+  /* font-family: var(--sans); */
+  font-family: "Patrick Hand SC", "cursive";
   z-index: 9;
-  border-radius: 4px;
-  font-size: 15px;
+  font-size: 19px;
+
+  /* 1. Remove the default border (the pseudo-element handles it now) */
+  border: none;
+
+  /* 2. "Hand-drawn" Box Shape
+     Small pixel variations work better than % for small buttons */
+  border-radius: 4px 6px 3px 5px / 5px 3px 6px 4px;
 }
 
+/* The Squiggly Border Overlay */
+.filterButton::before,
+#showinfo::before {
+  content: "";
+  position: absolute;
+
+  /* --- THE SMOOTHING FIX --- */
+
+  /* 1. Make the box double the size of the button */
+  inset: -50%;
+
+  /* 2. Scale it back down to fit. This creates the "High Res" effect */
+  transform: scale(0.5);
+
+  /* 3. Double the border thickness (4px becomes 2px visually) */
+  border: 2px solid #fff;
+
+  /* 4. Double the border radius so it matches the parent when shrunk */
+  border-radius: 8px 12px 6px 10px / 10px 6px 12px 8px;
+
+  /* --- Standard Filter Stuff --- */
+  filter: url(#parchment-squiggle);
+  pointer-events: none;
+  z-index: 1;
+}
+.filterButton:hover,
+#showinfo:hover {
+  background: #284b73;
+}
 .filterButton { top: 10px; }
-#showinfo { top: 50px; }
+#showinfo { top: 55px; }
 
 
 /* ============================================

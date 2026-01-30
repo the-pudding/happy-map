@@ -203,7 +203,7 @@ export function getIconName(p) {
   else if (age > 40) ageGroup = "old";
   else if (age > 25) ageGroup = "mid";
   const sex = sexChar === "m" ? "male" : "female";
-  const variant = (p._stableId || 0) % 6;
+  const variant = (p._stableId || 0) % 18;
   return `${ageGroup}-${sex}-${variant}`;
 }
 
@@ -217,13 +217,13 @@ export function getLabelSize(type, zoom) {
     return 40;
   }
   if (type === "l2") {
-    if (zoom < 4) return 12;
+    if (zoom < 4) return 16;
     if (zoom < 5) return 18;
     return 24;
   }
   // l3
-  if (zoom < 5) return 10;
-  if (zoom < 6) return 14;
+  if (zoom < 5) return 14;
+  if (zoom < 6) return 16;
   return 18;
 }
 
