@@ -50,7 +50,8 @@
     border-radius: 4px;
     box-shadow: 0 3px 14px rgba(0, 0, 0, 0.4);
     width: 280px;
-    font-family: var(--sans);
+    /* font-family: var(--sans); */
+     font-family: "Patrick Hand SC", cursive;
     position: relative;
   }
 
@@ -77,25 +78,26 @@
   }
 
   .popup-content .info {
-    font-size: 12px;
+    font-size: 18px;
     color: #666;
     margin-bottom: 5px;
     border-bottom: 1px solid #eee;
-    padding-bottom: 5px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    padding-bottom: 2px;
+    /* text-transform: uppercase; */
+    letter-spacing: 0px;
   }
 
   .popup-content .info span {
     color: #888;
-    text-transform: none;
+    /* text-transform: none; */
   }
 
   .popup-content .quote {
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 18px;
+    line-height: 1;
     color: #000;
-    font-family: var(--serif);
+    /* font-family: var(--serif); */
+     font-family: "Patrick Hand SC", cursive;
   }
 
   .debug-id {

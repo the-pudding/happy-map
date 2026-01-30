@@ -1,61 +1,165 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import { fade } from "svelte/transition";
-  import FilterPanel from "$components/happy-map/Filter.happymap.svelte";
-  import InfoPanel from "$components/happy-map/Info.happymap.svelte";
-  import Compass from "$components/happy-map/Compass.happymap.svelte";
-  import Popup from "$components/happy-map/Popup.happymap.svelte";
-  import IntroText from "$components/happy-map/IntroText.happymap.svelte";
-
-  import {
-    Deck,
-    OrthographicView,
-    TransitionInterpolator
-  } from "@deck.gl/core";
+  import { Deck, OrthographicView } from "@deck.gl/core";
   import { TileLayer } from "@deck.gl/geo-layers";
-  import { BitmapLayer, IconLayer, TextLayer } from "@deck.gl/layers";
-
+  import { BitmapLayer, IconLayer } from "@deck.gl/layers";
   import {
     matchesFilters,
     getIconName,
-    getLabelSize,
     shuffle,
-    getInitialZoom,
-    DEFAULT_FILTERS,
-    OUTLINE_OFFSETS
+    getInitialZoom
   } from "$components/helpers/textUtils.js";
+  import {
+    createLabelLayers,
+    spreadDotsToGrid
+  } from "$components/helpers/labelUtils.js";
+  import {
+    OrthographicFlyToInterpolator,
+    createOpacityAnimator,
+    createWiggleAnimator
+  } from "$components/helpers/animationUtils.js";
+  import Popup from "$components/happy-map/Popup.happymap.svelte";
+  import Compass from "$components/happy-map/Compass.happymap.svelte";
   import copy from "$data/copy.json";
+
+  let {
+    filters,
+    introShown,
+    storyActiveIndex = $bindable(),
+    popupInfo = $bindable(),
+    onReady
+  } = $props();
+  let fontLoaded = $state(false);
+
+  // --- CONSTANTS ---
+  const MAX_ICONS = 2000;
+  const ICON_SIZE = { width: 120, height: 225 };
+  const POPUP_OFFSET = 1.8;
+  const ZOOM_STEP = 0.5;
+
+  const storyTargetIds = new Set(
+    copy.story.filter((s) => s.targetId).map((s) => parseInt(s.targetId, 10))
+  );
 
   // --- STATE ---
   let canvasElement;
   let deck = null;
   let tileLayer = null;
+  let shallowWaterLayer = null;
+  let waveData = [];
   let backgroundOpacity = $state(1);
-  let opacityAnimationFrame = null;
-
-  let introStage = $state(0);
-  let introShown = $state(true);
-  let infoShown = $state(false);
-  let isFilterPanelOpen = $state(false);
-
-  let storyActiveIndex = $state(-1);
-  let popupInfo = $state(null);
-
-  const maxIcons = 2000;
-
-  let filters = $state({ ...DEFAULT_FILTERS });
-
-  // --- DATA STATE ---
   let allLabels = $state([]);
   let allDots = [];
-
-  // --- VIEW STATE ---
   let viewState = $state({
     target: [128, 128, 0],
     zoom: 2,
     minZoom: 0,
     maxZoom: 6
   });
+  let wiggleOffset = $state(0);
+
+  // --- HELPERS ---
+  const getIconSize = (zoom) => 5 + Math.pow(zoom, 1.7) * 2;
+  const getWaveScale = (zoom) => 0.6 + zoom * 0.25;
+
+  const opacityAnimator = createOpacityAnimator((opacity) => {
+    backgroundOpacity = opacity;
+    if (deck) renderDeck();
+  });
+
+  const wiggleAnimator = createWiggleAnimator((offset) => {
+    wiggleOffset = offset;
+    if (deck) renderDeck();
+  });
+
+  function createWaveData() {
+    const waves = [];
+    const center = 128;
+    const minDistFromCenter = 80;
+    const minWaveDistance = 20;
+
+    // Fixed seed points spread across the area
+    const seedPoints = [];
+    for (let i = 0; i < 500; i++) {
+      // Deterministic pseudo-random based on index
+      const seed1 = ((i * 127 + 43) % 1000) / 1000;
+      const seed2 = ((i * 311 + 97) % 1000) / 1000;
+
+      // Use seeds to place points in a circular pattern with randomness
+      const angle = seed1 * Math.PI * 2;
+      const radius = minDistFromCenter + seed2 * 200;
+
+      const x = center + Math.cos(angle) * radius + ((i * 173) % 100 - 50) * 0.5;
+      const y = center + Math.sin(angle) * radius + ((i * 241) % 100 - 50) * 0.5;
+
+      seedPoints.push({ x, y, i });
+    }
+
+    // Filter points that are too close to each other
+    for (const point of seedPoints) {
+      const { x, y, i } = point;
+
+      // Check distance from center
+      const dist = Math.sqrt((x - center) ** 2 + (y - center) ** 2);
+      if (dist < minDistFromCenter) continue;
+
+      // Check distance to existing waves
+      let tooClose = false;
+      for (const wave of waves) {
+        const dx = x - wave.x;
+        const dy = y - wave.y;
+        if (Math.sqrt(dx * dx + dy * dy) < minWaveDistance) {
+          tooClose = true;
+          break;
+        }
+      }
+      if (tooClose) continue;
+
+      // Fewer waves at edges
+      const edgeDist = dist - minDistFromCenter;
+      const seed3 = ((i * 89 + 199) % 1000) / 1000;
+      const skipChance = Math.pow(edgeDist / 200, 2);
+      if (seed3 < skipChance) continue;
+
+      // Deterministic properties
+      const seed4 = ((i * 53 + 97) % 1000) / 1000;
+      const seed5 = ((i * 151 + 263) % 1000) / 1000;
+
+      waves.push({
+        x,
+        y,
+        waveType: 1 + Math.floor(seed4 * 7),
+        rotation: 0,
+        opacity: Math.max(0.15, 0.5 - (edgeDist / 300))
+      });
+
+      if (waves.length >= 100) break;
+    }
+
+    return waves;
+  }
+
+  function handleZoomIn() {
+    const newZoom = Math.min(viewState.zoom + ZOOM_STEP, viewState.maxZoom);
+    viewState = {
+      ...viewState,
+      zoom: newZoom,
+      transitionDuration: 300,
+      transitionInterpolator: new OrthographicFlyToInterpolator()
+    };
+    deck?.setProps({ initialViewState: viewState });
+  }
+
+  function handleZoomOut() {
+    const newZoom = Math.max(viewState.zoom - ZOOM_STEP, viewState.minZoom);
+    viewState = {
+      ...viewState,
+      zoom: newZoom,
+      transitionDuration: 300,
+      transitionInterpolator: new OrthographicFlyToInterpolator()
+    };
+    deck?.setProps({ initialViewState: viewState });
+  }
 
   // --- DATA LOADING ---
   async function loadData() {
@@ -67,26 +171,22 @@
 
       const labelsRaw = await labelsRes.json();
       const TYPE_RANK = { l1: 1000, l2: 500, l3: 1 };
-      labelsRaw.forEach((l, index) => {
+      labelsRaw.forEach((l, i) => {
         l._random = Math.random();
-        l._uniqueId = `lbl_${index}`;
+        l._uniqueId = `lbl_${i}`;
       });
-      allLabels = labelsRaw.sort((a, b) => {
-        const rankA = TYPE_RANK[a.type] || 0;
-        const rankB = TYPE_RANK[b.type] || 0;
-        if (rankA !== rankB) return rankB - rankA;
-        if (b.priority !== a.priority) return b.priority - a.priority;
-        return b._random - a._random;
-      });
+      allLabels = labelsRaw.sort(
+        (a, b) =>
+          (TYPE_RANK[b.type] || 0) - (TYPE_RANK[a.type] || 0) ||
+          b.priority - a.priority ||
+          b._random - a._random
+      );
 
       const rawDots = await dotsRes.json();
       rawDots.forEach((d, i) => (d._stableId = i));
-      const shuffled = shuffle(rawDots);
-      allDots = shuffled.sort((a, b) => {
-        const scoreA = a.rank_score ?? -Infinity;
-        const scoreB = b.rank_score ?? -Infinity;
-        return scoreB - scoreA;
-      });
+      allDots = shuffle(rawDots).sort(
+        (a, b) => (b.rank_score ?? -Infinity) - (a.rank_score ?? -Infinity)
+      );
     } catch (err) {
       console.error("Error loading data:", err);
     }
@@ -97,211 +197,187 @@
     if (!deck) return;
 
     try {
-      const testViewports = deck.getViewports();
-      if (!testViewports || testViewports.length === 0) {
-        requestAnimationFrame(() => renderDeck());
+      if (!deck.getViewports()?.length) {
+        requestAnimationFrame(renderDeck);
         return;
       }
-    } catch (e) {
-      requestAnimationFrame(() => renderDeck());
+    } catch {
+      requestAnimationFrame(renderDeck);
       return;
     }
 
-    // Filter Dots
-    const dotsToRender = [];
+    // Filter dots
+    const dotsToFilter = [];
+    const includedIds = new Set();
 
-    if (storyActiveIndex !== -1) {
-      const storyDot = allDots.find((d) => d._stableId === storyActiveIndex);
-      if (storyDot) {
-        storyDot._isActive = true;
-        dotsToRender.push(storyDot);
+    const storyDot =
+      storyActiveIndex !== -1 &&
+      allDots.find((d) => d._stableId === storyActiveIndex);
+    if (storyDot) {
+      storyDot._isActive = true;
+      dotsToFilter.push(storyDot);
+      includedIds.add(storyDot._stableId);
+    }
+
+    for (const targetId of storyTargetIds) {
+      if (includedIds.has(targetId)) continue;
+      const dot = allDots.find((d) => d._stableId === targetId);
+      if (dot) {
+        dot._isActive = false;
+        dotsToFilter.push(dot);
+        includedIds.add(targetId);
       }
     }
 
-    let dotsCount = 0;
-    for (let i = 0; i < allDots.length; i++) {
-      const p = allDots[i];
-      if (storyActiveIndex !== -1 && p._stableId === storyActiveIndex) continue;
-      if (dotsCount >= maxIcons) break;
+    for (const p of allDots) {
+      if (dotsToFilter.length >= MAX_ICONS) break;
+      if (includedIds.has(p._stableId)) continue;
       if (!matchesFilters(p, filters)) continue;
       p._isActive = false;
-      dotsToRender.push(p);
-      dotsCount++;
+      dotsToFilter.push(p);
     }
 
-    // Icon Layer
+    const dotsToRender = spreadDotsToGrid(dotsToFilter);
+    const sortedDots = [...dotsToRender].sort((a, b) => a[1] - b[1]);
+
+    const selectedId = popupInfo?.data?._stableId;
+
     const iconLayer = new IconLayer({
       id: "dots",
-      data: dotsToRender,
-      getPosition: (d) => [d[0] * 256, d[1] * 256],
-      getIcon: (d) => {
-        const name = getIconName(d);
-        const suffix = d._isActive ? "-active" : "-default";
-        return {
-          url: `assets/icons/${name}${suffix}.png`,
-          width: 60,
-          height: 60,
-          mask: false,
-          anchorY: 60
-        };
+      data: sortedDots,
+      getPosition: (d) => {
+        const baseX = d[0] * 256;
+        const baseY = d[1] * 256;
+        if (selectedId !== undefined && d._stableId === selectedId) {
+          return [baseX + wiggleOffset, baseY];
+        }
+        return [baseX, baseY];
       },
-      getSize: () => Math.max(30, Math.floor(viewState.zoom * 8)),
-      getColor: (d) => {
-        if (d._isActive) return [255, 255, 255, 255];
-        return [255, 255, 255, Math.round(backgroundOpacity * 255)];
-      },
+      getIcon: (d) => ({
+        url: `assets/icons/${getIconName(d)}.png`,
+        ...ICON_SIZE,
+        mask: false,
+        anchorY: ICON_SIZE.height
+      }),
+      getSize: () => getIconSize(viewState.zoom),
+      getColor: () => [255, 255, 255, 255],
       sizeScale: window.devicePixelRatio || 1,
       sizeUnits: "pixels",
       pickable: true,
-      iconAtlas: null,
-      iconMapping: null,
       alphaCutoff: 0,
       billboard: true,
-      textureParameters: {
-        minFilter: "linear",
-        magFilter: "linear"
-      },
+      parameters: { depthTest: false },
+      textureParameters: { minFilter: "linear", magFilter: "linear" },
       updateTriggers: {
-        getColor: [backgroundOpacity, storyActiveIndex]
+        getColor: [backgroundOpacity, storyActiveIndex],
+        getPosition: [wiggleOffset, selectedId]
       },
-      onClick: (info) => {
-        if (info.object) {
-          const viewport = deck.getViewports()[0];
-          if (viewport) {
-            const screenPos = viewport.project([info.object[0] * 256, info.object[1] * 256]);
-            const iconSize = Math.max(30, Math.floor(viewState.zoom * 8));
-            popupInfo = {
-              x: screenPos[0],
-              y: screenPos[1] - iconSize,
-              data: info.object
-            };
-          }
-        }
+      onClick: ({ object }) => {
+        if (!object) return;
+        const viewport = deck.getViewports()[0];
+        if (!viewport) return;
+        const [x, y] = viewport.project([object[0] * 256, object[1] * 256]);
+        popupInfo = {
+          x,
+          y: y - getIconSize(viewState.zoom) * POPUP_OFFSET,
+          data: object
+        };
+        wiggleAnimator.start();
       }
     });
 
-    // Filter labels based on zoom
-    const currentZoomInt = Math.floor(viewState.zoom);
-    const labelsToRender = allLabels.filter((l) => {
-      if (l.type === "l1") return currentZoomInt < 5;
-      if (l.type === "l2") return currentZoomInt >= 3;
-      if (l.type === "l3") return currentZoomInt >= 4;
-      return false;
-    });
-
-    const serifLabels = labelsToRender.filter((d) => d.type !== "l3");
-    const sansLabels = labelsToRender.filter((d) => d.type === "l3");
-
-    const serifShadowLayers = OUTLINE_OFFSETS.map(
-      (offset, i) =>
-        new TextLayer({
-          id: `labels-serif-shadow-${i}`,
-          data: serifLabels,
-          getPosition: (d) => [d.x * 256, d.y * 256],
-          getText: (d) => d.text.replace(/<br\s*\/?>/gi, "\n"),
-          getSize: (d) => getLabelSize(d.type, viewState.zoom),
-          getColor: [0, 0, 0, 200],
-          getPixelOffset: offset,
-          getTextAnchor: "middle",
-          getAlignmentBaseline: "center",
-          fontFamily: "Georgia, Times New Roman, serif",
-          fontWeight: "800",
-          sizeUnits: "pixels",
-          billboard: true,
-          updateTriggers: { getSize: [viewState.zoom] }
-        })
-    );
-
-    const sansShadowLayers = OUTLINE_OFFSETS.map(
-      (offset, i) =>
-        new TextLayer({
-          id: `labels-sans-shadow-${i}`,
-          data: sansLabels,
-          getPosition: (d) => [d.x * 256, d.y * 256],
-          getText: (d) => d.text.replace(/<br\s*\/?>/gi, "\n"),
-          getSize: (d) => getLabelSize(d.type, viewState.zoom),
-          getColor: [0, 0, 0, 200],
-          getPixelOffset: offset,
-          getTextAnchor: "middle",
-          getAlignmentBaseline: "center",
-          fontFamily: "Arial, Helvetica, sans-serif",
-          fontWeight: "400",
-          sizeUnits: "pixels",
-          billboard: true,
-          updateTriggers: { getSize: [viewState.zoom] }
-        })
-    );
-
-    const serifTextLayer = new TextLayer({
-      id: "labels-serif-main",
-      data: serifLabels,
-      getPosition: (d) => [d.x * 256, d.y * 256],
-      getText: (d) => d.text.replace(/<br\s*\/?>/gi, "\n"),
-      getSize: (d) => getLabelSize(d.type, viewState.zoom),
-      getColor: (d) => {
-        if (d.type === "l1") return [255, 255, 255, 255];
-        if (d.type === "l2") return [255, 224, 110, 255];
-        return [255, 255, 255, 255];
-      },
-      getTextAnchor: "middle",
-      getAlignmentBaseline: "center",
-      fontFamily: "Georgia, Times New Roman, serif",
-      fontWeight: "800",
+    const waveLayer = new IconLayer({
+      id: "waves",
+      data: waveData,
+      getPosition: (d) => [d.x, d.y],
+      getIcon: (d) => ({
+        url: `assets/wave${d.waveType}.svg`,
+        width: 200 * 3,
+        height: 50 * 3
+        // mask: true
+      }),
+      getSize: () => getWaveScale(viewState.zoom) * 20,
+      getAngle: (d) => 180 + d.rotation * (180 / Math.PI),
+      getColor: (d) => [0, 0, 0, Math.floor(d.opacity * 400)], // Black with opacity
+      sizeScale: window.devicePixelRatio || 1,
       sizeUnits: "pixels",
-      billboard: true,
-      updateTriggers: { getSize: [viewState.zoom] }
+      billboard: false,
+      updateTriggers: {
+        getSize: [viewState.zoom]
+      }
     });
 
-    const sansTextLayer = new TextLayer({
-      id: "labels-sans-main",
-      data: sansLabels,
-      getPosition: (d) => [d.x * 256, d.y * 256],
-      getText: (d) => d.text.replace(/<br\s*\/?>/gi, "\n"),
-      getSize: (d) => getLabelSize(d.type, viewState.zoom),
-      getColor: [255, 255, 255, 255],
-      getTextAnchor: "middle",
-      getAlignmentBaseline: "center",
-      fontFamily: "Arial, Helvetica, sans-serif",
-      fontWeight: "400",
-      sizeUnits: "pixels",
-      billboard: true,
-      updateTriggers: { getSize: [viewState.zoom] }
-    });
+    const layers = [
+      waveLayer,
+      shallowWaterLayer,
+      tileLayer,
+      iconLayer,
+      ...createLabelLayers(allLabels, viewState.zoom, fontLoaded)
+    ].filter(Boolean);
 
-    deck.setProps({
-      layers: [
-        tileLayer,
-        iconLayer,
-        ...serifShadowLayers,
-        ...sansShadowLayers,
-        serifTextLayer,
-        sansTextLayer
-      ]
-    });
+    deck.setProps({ layers });
+  }
+
+  // --- EXPORTED METHODS ---
+  export function animateOpacity(targetOpacity, duration = 500) {
+    opacityAnimator.animate(backgroundOpacity, targetOpacity, duration);
+  }
+
+  export function flyTo(targetX, targetY, zoom) {
+    viewState = {
+      ...viewState,
+      target: [targetX, targetY, 0],
+      zoom,
+      transitionDuration: 2500,
+      transitionInterpolator: new OrthographicFlyToInterpolator()
+    };
+    deck?.setProps({ initialViewState: viewState });
+  }
+
+  export function showPopupForDot(stableId) {
+    const dot = allDots.find((d) => d._stableId === stableId);
+    const viewport = deck?.getViewports()[0];
+    if (!dot || !viewport) return;
+    const [x, y] = viewport.project([dot[0] * 256, dot[1] * 256]);
+    popupInfo = {
+      x,
+      y: y - getIconSize(viewState.zoom) * POPUP_OFFSET,
+      data: dot
+    };
+    wiggleAnimator.start();
   }
 
   // --- LIFECYCLE ---
   onMount(async () => {
     await loadData();
 
+    document.fonts.load('400 16px "Patrick Hand SC"').then(() => {
+    console.log("Font loaded!");
+    fontLoaded = true; // <--- Flip the switch
+    if (deck) renderDeck();
+  });
+
     if (!canvasElement.offsetWidth || !canvasElement.offsetHeight) {
       canvasElement.style.width = "100%";
       canvasElement.style.height = "100%";
     }
 
-    const startStep = copy.story[introStage];
-    const initialZoom = getInitialZoom();
+    viewState = { ...viewState, zoom: getInitialZoom() };
 
-    viewState = {
-      target: [128, 128, 0],
-      zoom: initialZoom,
-      minZoom: 0,
-      maxZoom: 6
-    };
+    // Create wave data
+    waveData = createWaveData();
 
-    if (startStep && startStep.targetId !== undefined) {
-      storyActiveIndex = Number(startStep.targetId);
-    }
+    // Shallow water layer
+    shallowWaterLayer = new BitmapLayer({
+      id: "shallow-water",
+      image: "assets/ocean-glow-varied.png",
+      bounds: [-50, 306, 306, -50],
+      opacity: 0.4,
+      parameters: {
+        blendFunc: [770, 1],
+        blendEquation: 32774
+      }
+    });
 
     tileLayer = new TileLayer({
       id: "tiles",
@@ -310,11 +386,9 @@
       tileSize: 256,
       extent: [0, 0, 256, 256],
       refinementStrategy: "best-available",
-      getTileData: async (tile) => {
-        const { x, y, z } = tile.index;
-        const url = `assets/tiles/${z}/${x}/${y}.png`;
+      getTileData: async ({ index: { x, y, z } }) => {
         try {
-          const response = await fetch(url);
+          const response = await fetch(`assets/tiles/${z}/${x}/${y}.png`);
           if (!response.ok) return null;
           const blob = await response.blob();
           const img = new Image();
@@ -324,16 +398,16 @@
             img.onerror = () => resolve(null);
             img.src = URL.createObjectURL(blob);
           });
-        } catch (e) {
+        } catch {
           return null;
         }
       },
-      renderSubLayers: (props) => {
-        if (!props.data) return null;
-        const { left, top, right, bottom } = props.tile.bbox;
+      renderSubLayers: ({ id, data, tile }) => {
+        if (!data) return null;
+        const { left, top, right, bottom } = tile.bbox;
         return new BitmapLayer({
-          id: props.id,
-          image: props.data,
+          id,
+          image: data,
           bounds: [left, bottom, right, top]
         });
       }
@@ -347,213 +421,133 @@
       controller: { doubleClickZoom: false, keyboard: false },
       views: new OrthographicView({ id: "ortho" }),
       pickingRadius: 15,
-      getCursor: ({ isDragging, isHovering }) => {
-        if (isDragging) return "grabbing";
-        if (isHovering) return "pointer";
-        return "grab";
-      },
+      getCursor: ({ isDragging, isHovering }) =>
+        isDragging ? "grabbing" : isHovering ? "pointer" : "grab",
       onViewStateChange: ({ viewState: newViewState, interactionState }) => {
         viewState = newViewState;
-
         if (interactionState?.isDragging) {
           popupInfo = null;
+          wiggleAnimator.stop();
         }
-
         if (deck) renderDeck();
       },
       onAfterRender: () => {
-        // Update popup position after each render
-        if (popupInfo && popupInfo.data) {
-          const dot = popupInfo.data;
-          const viewport = deck.getViewports()[0];
-          if (viewport) {
-            const screenPos = viewport.project([dot[0] * 256, dot[1] * 256]);
-            const iconSize = Math.max(30, Math.floor(viewState.zoom * 8));
-
-            // Only update if position actually changed
-            const newX = screenPos[0];
-            const newY = screenPos[1] - iconSize;
-
-            if (
-              Math.abs(popupInfo.x - newX) > 0.5 ||
-              Math.abs(popupInfo.y - newY) > 0.5
-            ) {
-              popupInfo = {
-                ...popupInfo,
-                x: newX,
-                y: newY
-              };
-            }
-          }
+        if (!popupInfo?.data) return;
+        const viewport = deck.getViewports()[0];
+        if (!viewport) return;
+        const [newX, newY] = viewport.project([
+          popupInfo.data[0] * 256,
+          popupInfo.data[1] * 256
+        ]);
+        const y = newY - getIconSize(viewState.zoom) * POPUP_OFFSET;
+        if (
+          Math.abs(popupInfo.x - newX) > 0.5 ||
+          Math.abs(popupInfo.y - y) > 0.5
+        ) {
+          popupInfo = { ...popupInfo, x: newX, y };
         }
       },
-      onClick: (info) => {
-        if (!info.object) popupInfo = null;
+      onClick: ({ object }) => {
+        if (!object) {
+          popupInfo = null;
+          wiggleAnimator.stop();
+        }
       },
       onLoad: () => {
         renderDeck();
-        setTimeout(showStoryPopup, 500);
+        onReady?.();
       }
     });
   });
 
   onDestroy(() => {
-    if (deck) deck.finalize();
-    if (opacityAnimationFrame) cancelAnimationFrame(opacityAnimationFrame);
+    deck?.finalize();
+    opacityAnimator.cancel();
+    wiggleAnimator.stop();
   });
 
   $effect(() => {
-    const _ = JSON.stringify(filters);
-    const __ = introStage;
+    JSON.stringify(filters);
+    storyActiveIndex;
     if (deck) renderDeck();
   });
-
-  // --- POPUP ---
-  function showStoryPopup() {
-    if (storyActiveIndex === -1 || !deck) return;
-    const dot = allDots.find((d) => d._stableId === storyActiveIndex);
-    if (!dot) return;
-    const viewport = deck.getViewports()[0];
-    if (!viewport) return;
-    const screenPos = viewport.project([dot[0] * 256, dot[1] * 256]);
-    popupInfo = { x: screenPos[0], y: screenPos[1], data: dot };
-  }
-
-  // --- ANIMATION ---
-  class OrthographicFlyToInterpolator extends TransitionInterpolator {
-    constructor(opts = {}) {
-      super({
-        compare: ["target", "zoom"],
-        extract: ["target", "zoom"],
-        required: ["target", "zoom"]
-      });
-      this.speed = opts.speed || 1.2;
-    }
-
-    interpolateProps(startProps, endProps, t) {
-      const { zoom: startZoom, target: startTarget } = startProps;
-      const { zoom: endZoom, target: endTarget } = endProps;
-
-      const dx = endTarget[0] - startTarget[0];
-      const dy = endTarget[1] - startTarget[1];
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const zoomOutAmount = Math.min(2, Math.log2(1 + distance / 100) * 0.8);
-
-      const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
-      const easeInOut = (x) => -(Math.cos(Math.PI * x) - 1) / 2;
-
-      const panT = easeOutCubic(t);
-      const target = [
-        startTarget[0] + (endTarget[0] - startTarget[0]) * panT,
-        startTarget[1] + (endTarget[1] - startTarget[1]) * panT,
-        0
-      ];
-
-      const easedT = easeInOut(t);
-      const zoomDip = Math.sin(t * Math.PI) * zoomOutAmount;
-      const linearZoom = startZoom + (endZoom - startZoom) * easedT;
-      const zoom = linearZoom - zoomDip;
-
-      return { target, zoom };
-    }
-  }
-
-  function animateOpacity(targetOpacity, duration = 500) {
-    if (opacityAnimationFrame) cancelAnimationFrame(opacityAnimationFrame);
-
-    const startOpacity = backgroundOpacity;
-    const startTime = performance.now();
-
-    function step(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      backgroundOpacity = startOpacity + (targetOpacity - startOpacity) * eased;
-      if (deck) renderDeck();
-      if (progress < 1) opacityAnimationFrame = requestAnimationFrame(step);
-    }
-
-    opacityAnimationFrame = requestAnimationFrame(step);
-  }
-
-  // --- NAVIGATION ---
-  function stepToggle(t) {
-    if (t == 2) {
-      introShown = false;
-      storyActiveIndex = -1;
-      popupInfo = null;
-      animateOpacity(1);
-      renderDeck();
-      return;
-    }
-
-    introStage += t;
-    const stageData = copy.story[introStage];
-
-    if (stageData.targetId !== undefined) {
-      storyActiveIndex = Number(stageData.targetId);
-      showStoryPopup();
-    } else {
-      storyActiveIndex = -1;
-      popupInfo = null;
-    }
-
-    animateOpacity(stageData?.isolate == 1 ? 0.3 : 1);
-
-    const targetX = introStage == 0 ? 128 : Number(stageData.lng) * 256;
-    const targetY = introStage == 0 ? 128 : Number(stageData.lat) * 256;
-    const zoom = introStage == 0 ? getInitialZoom() : stageData.zoom;
-
-    const newViewState = {
-      ...viewState,
-      target: [targetX, targetY, 0],
-      zoom,
-      transitionDuration: 2500,
-      transitionInterpolator: new OrthographicFlyToInterpolator()
-    };
-
-    viewState = newViewState;
-    if (deck) deck.setProps({ initialViewState: newViewState });
-  }
-
-  function infoToggle(x) {
-    infoShown = x;
-    if (x) isFilterPanelOpen = false;
-  }
-
-  function filterToggle() {
-    isFilterPanelOpen = !isFilterPanelOpen;
-    if (isFilterPanelOpen) infoShown = false;
-  }
 </script>
 
-<div class="wrapper">
+<div class="map-container">
   <canvas bind:this={canvasElement} class="deck-canvas"></canvas>
   <Popup bind:popupInfo />
-
   {#if !introShown}
-    <div transition:fade>
-      <Compass {deck} {viewState} />
-    </div>
+    <Compass {deck} {viewState} />
   {/if}
+
+  <div class="zoom-controls">
+    <button
+      class="zoom-btn"
+      onclick={handleZoomIn}
+      disabled={viewState.zoom >= viewState.maxZoom}
+      aria-label="Zoom in"
+    >
+      +
+    </button>
+    <button
+      class="zoom-btn"
+      onclick={handleZoomOut}
+      disabled={viewState.zoom <= viewState.minZoom}
+      aria-label="Zoom out"
+    >
+      −
+    </button>
+  </div>
 </div>
 
-{#if !introShown}
-  <button class="filterButton" onclick={filterToggle} transition:fade
-    >Filter Responses</button
-  >
-  <button id="showinfo" onclick={() => infoToggle(!infoShown)} transition:fade
-    >Show info</button
-  >
-  <FilterPanel bind:filters bind:isOpen={isFilterPanelOpen} />
-  <InfoPanel bind:isOpen={infoShown} />
-{/if}
-
-{#if introShown}
-  <div transition:fade>
-    <IntroText {introStage} onStep={stepToggle} />
-  </div>
-{/if}
-
 <style>
+  .map-container {
+    position: absolute;
+    inset: 0;
+  }
+
+  .deck-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .zoom-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 20px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+  }
+
+  .zoom-btn:hover:not(:disabled) {
+    background: #f0f0f0;
+  }
+
+  .zoom-btn:active:not(:disabled) {
+    background: #e0e0e0;
+  }
+
+  .zoom-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 </style>

@@ -65,28 +65,88 @@
   <div class="compassLabel xlabel right">More agency</div>
 </div>
 
+<svg style="visibility: hidden; position: absolute;" width="0" height="0">
+  <defs>
+    <filter id="parchment-squiggle">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise" />
+
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" result="distorted" />
+
+      <!-- <feGaussianBlur in="distorted" stdDeviation="0.7" /> -->
+    </filter>
+  </defs>
+</svg>
+
 <style>
   .compass {
-    position: absolute;
-    left: 10px;
-    bottom: max(10px, env(safe-area-inset-bottom, 10px));
-    width: clamp(130px, 18vw, 180px);
-    height: clamp(130px, 18vw, 180px);
-    background: #002436;
-    z-index: 999;
-    border: 2px solid #264a5c;
-    border-radius: 4px;
-    overflow: hidden;
-    font-family: var(--sans);
-  }
+  position: absolute;
+  left: 10px;
+  bottom: max(10px, env(safe-area-inset-bottom, 10px));
+  width: clamp(130px, 18vw, 180px);
+  height: clamp(130px, 18vw, 180px);
+  z-index: 999;
+  font-family: "Patrick Hand SC", "cursive";
 
-  .viewport-box {
+  /* Background logic */
+  background: #36577d;
+  /* box-shadow: 2px 3px 5px rgba(0,0,0,0.3); */
+
+  /* SHAPE 1: The Container */
+  border-radius: 2% 5% 3% 4% / 5% 3% 5% 2%;
+}
+
+/* The "Fountain Pen" Border */
+.compass::before {
+  content: "";
+  position: absolute;
+
+  /* FIX: Change -3px to 0. This makes the border sit EXACTLY on the edge. */
+  inset: 0;
+
+  /* Border settings */
+  border: 1px solid #fff; /* Increased to 3px so it covers the edge better */
+
+  /* SHAPE 2: Must match SHAPE 1 exactly */
+  border-radius: 2% 5% 3% 4% / 5% 3% 5% 2%;
+
+  /* Filter settings */
+  filter: url(#parchment-squiggle);
+  pointer-events: none;
+  z-index: 1; /* Changed to 1 so the border sits ON TOP of the blue background */
+}
+.viewport-box {
     position: absolute;
-    background: rgba(158, 255, 220, 0.4);
     pointer-events: none;
     z-index: 50;
-    border-radius: 1px;
-  }
+
+    /* 1. Transparent Background */
+    background-color: transparent;
+
+    /* 2. The White Cross-Hatch Stack */
+    background-image:
+        /* Layer 1: Thick diagonal strokes (45deg) - White/Chalk */
+        repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.3) 0px,
+            rgba(255, 255, 255, 0.3) 2px,
+            transparent 2px,
+            transparent 8px
+        ),
+        /* Layer 2: Thinner, steeper strokes (-60deg) - White/Chalk */
+        repeating-linear-gradient(
+            -60deg,
+            rgba(255, 255, 255, 0.2) 0px,
+            rgba(255, 255, 255, 0.2) 1px,
+            transparent 1px,
+            transparent 6px
+        );
+
+    /* 3. Rough Edges */
+    border-radius: 2px 255px 3px 25px / 255px 5px 22px 3px;
+
+    /* 4. Border Color (White sketch) */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
 
   .yaxis {
     position: absolute;
@@ -108,7 +168,7 @@
 
   .compassLabel {
     position: absolute;
-    font-size: clamp(10px, 1.2vw, 12px);
+    font-size: clamp(12px, 1.2vw, 16px);
     line-height: 1;
     font-weight: 300;
     color: rgb(232, 249, 255);
