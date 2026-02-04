@@ -42,8 +42,10 @@
   .infoPanel h1 {
     font-size: 22px;
     color: #ffec70;
-    margin: 0 0 5px 0;
+    margin: 0 0 10px 0;
     line-height: 1;
+    font-family: var(--handwriting);
+    font-weight: 300;
   }
 
   .infoPanel .byline {
@@ -83,15 +85,16 @@
     margin-bottom: 15px;
   }
 
-  .infoPanel :global(p span) {
+/*   .infoPanel :global(p span) {
     color: #ffec70;
-  }
+    font-weight: bold;
+  } */
 
-  .infoPanel :global(.cite) {
+/*   .infoPanel :global(.cite) {
     font-size: 12px;
     color: #8db1b3;
     font-style: italic;
-  }
+  } */
 
   .infoPanel :global(.links) {
     font-size: 12px;

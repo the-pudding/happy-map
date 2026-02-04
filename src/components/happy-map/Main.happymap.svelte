@@ -5,7 +5,10 @@
   import IntroText from "$components/happy-map/IntroText.happymap.svelte";
   import Map from "$components/happy-map/Map.happymap.svelte";
 
-  import { getInitialZoom, DEFAULT_FILTERS } from "$components/helpers/textUtils.js";
+  import {
+    getInitialZoom,
+    DEFAULT_FILTERS
+  } from "$components/helpers/textUtils.js";
   import copy from "$data/copy.json";
 
   // --- STATE ---
@@ -42,7 +45,6 @@
       mapComponent.animateOpacity(1);
       return;
     }
-
     introStage += t;
     const stageData = copy.story[introStage];
 
@@ -56,11 +58,20 @@
 
     mapComponent.animateOpacity(stageData?.isolate == 1 ? 0.3 : 1);
 
-    const targetX = introStage == 0 ? 128 : Number(stageData.lng) * 256;
-    const targetY = introStage == 0 ? 128 : Number(stageData.lat) * 256;
-    const zoom = introStage == 0 ? getInitialZoom() : stageData.zoom;
-
-    mapComponent.flyTo(targetX, targetY, zoom);
+    // *** CHANGE THIS PART ***
+    if (introStage == 0) {
+      // Stage 0: fly to center
+      mapComponent.flyTo(128, 128, getInitialZoom());
+    } else if (stageData.targetId !== undefined) {
+  mapComponent.flyToDot(Number(stageData.targetId), stageData.zoom);
+} else {
+      // No targetId: use lng/lat from copy.json
+      mapComponent.flyTo(
+        Number(stageData.lng) * 256,
+        Number(stageData.lat) * 256,
+        stageData.zoom
+      );
+    }
   }
 
   function infoToggle(x) {
@@ -86,9 +97,13 @@
   />
 </div>
 
-{#if !introShown}
-  <button class="filterButton" onclick={filterToggle} transition:fade>Filter Responses</button>
-  <button id="showinfo" onclick={() => infoToggle(!infoShown)} transition:fade>Show info</button>
+{#if introStage > copy.story.length - 2}
+  <button class="filterButton" onclick={filterToggle} transition:fade
+    >Filter Responses</button
+  >
+  <button id="showinfo" onclick={() => infoToggle(!infoShown)} transition:fade
+    >Show info</button
+  >
   <FilterPanel bind:filters bind:isOpen={isFilterPanelOpen} />
   <InfoPanel bind:isOpen={infoShown} />
 {/if}

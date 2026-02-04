@@ -1,6 +1,8 @@
 import { TextLayer } from "@deck.gl/layers";
 import { getLabelSize } from "$components/helpers/textUtils.js";
 
+const handwriting = '"Playpen Sans", cursive';
+const fontSizeMultiplier = 1.15;
 export function filterLabels(allLabels, zoom) {
   const currentZoomInt = Math.floor(zoom);
   return allLabels.filter((l) => {
@@ -17,32 +19,32 @@ export function createLabelLayers(allLabels, zoom, fontLoaded) {
 
   // --- HELPER CONFIGURATIONS ---
 
-  // GLOW SETTINGS
-  const glowSettings = {
-    fontSettings: {
-      sdf: true,
-      fontSize: 128,
-      buffer: 32,
-      radius: 24,
-      smoothing: 0.4
-    },
-    outlineWidth: 16,
-    outlineColor: [0, 0, 0, 255],
-    getColor: [0, 0, 0, 0]
-  };
+// GLOW SETTINGS - THICKER SHADOWS
+const glowSettings = {
+  fontSettings: {
+    sdf: true,
+    fontSize: 128,
+    buffer: 100,      // Increased from 32 - prevents clipping of larger glow
+    radius: 60,      // Increased from 24 - larger blur radius
+    smoothing: 0.5   // Increased from 0.4 - softer/more diffuse glow
+  },
+  outlineWidth: 80,  // Increased from 25 - main thickness control
+  outlineColor: [0, 0, 0, 255],
+  getColor: [0, 0, 0, 0]
+};
 
-  // TEXT SETTINGS
-  const textSettings = {
-    fontSettings: {
-      sdf: true,
-      fontSize: 128,
-      buffer: 8,
-      radius: 8,
-      smoothing: 0.1
-    },
-    outlineWidth: 2,
-    outlineColor: [0, 0, 0, 255]
-  };
+// TEXT SETTINGS - THICKER OUTLINE
+const textSettings = {
+  fontSettings: {
+    sdf: true,
+    fontSize: 128,
+    buffer: 12,      // Increased from 8
+    radius: 12,      // Increased from 8
+    smoothing: 0.1
+  },
+  outlineWidth: 4,   // Increased from 2 - thicker crisp outline
+  outlineColor: [0, 0, 0, 255]
+};
 
   // --- LAYER CREATION ---
 
@@ -52,12 +54,12 @@ export function createLabelLayers(allLabels, zoom, fontLoaded) {
     data: labelsToRender,
     getPosition: (d) => [d.x * 256, d.y * 256],
     getText: (d) => d.text.replace(/<br\s*\/?>/gi, "\n"),
-    getSize: (d) => getLabelSize(d.type, zoom) * 1.4,
+    getSize: (d) => getLabelSize(d.type, zoom) * fontSizeMultiplier,
     getTextAnchor: "middle",
     getAlignmentBaseline: "center",
 
     // --- FIX 1: Complete the Ternary Operator ---
-    fontFamily: fontLoaded ? '"Patrick Hand SC", cursive' : 'sans-serif',
+    fontFamily: fontLoaded ? handwriting  : 'sans-serif',
 
     // --- FIX 2: Use 400 (Patrick Hand SC has no 600 weight) ---
     fontWeight: "400",
@@ -76,12 +78,12 @@ export function createLabelLayers(allLabels, zoom, fontLoaded) {
     data: labelsToRender,
     getPosition: (d) => [d.x * 256, d.y * 256],
     getText: (d) => d.text.replace(/<br\s*\/?>/gi, "\n"),
-    getSize: (d) => getLabelSize(d.type, zoom) * 1.4,
+    getSize: (d) => getLabelSize(d.type, zoom) * fontSizeMultiplier,
     getTextAnchor: "middle",
     getAlignmentBaseline: "center",
 
     // --- FIX 1: Complete the Ternary Operator ---
-    fontFamily: fontLoaded ? '"Patrick Hand SC", cursive' : 'sans-serif',
+    fontFamily: fontLoaded ? handwriting : 'sans-serif',
 
     // --- FIX 2: Use 400 ---
     fontWeight: "400",

@@ -85,35 +85,16 @@
   width: clamp(130px, 18vw, 180px);
   height: clamp(130px, 18vw, 180px);
   z-index: 999;
-  font-family: "Patrick Hand SC", "cursive";
-
+  font-family: var(--handwriting);
   /* Background logic */
-  background: #36577d;
+  background: #274970;
   /* box-shadow: 2px 3px 5px rgba(0,0,0,0.3); */
 
   /* SHAPE 1: The Container */
-  border-radius: 2% 5% 3% 4% / 5% 3% 5% 2%;
+  border-radius: 10px;
+  box-shadow: 2px 2px 10px 2px rgba(0,0,0,0.3);
 }
 
-/* The "Fountain Pen" Border */
-.compass::before {
-  content: "";
-  position: absolute;
-
-  /* FIX: Change -3px to 0. This makes the border sit EXACTLY on the edge. */
-  inset: 0;
-
-  /* Border settings */
-  border: 1px solid #fff; /* Increased to 3px so it covers the edge better */
-
-  /* SHAPE 2: Must match SHAPE 1 exactly */
-  border-radius: 2% 5% 3% 4% / 5% 3% 5% 2%;
-
-  /* Filter settings */
-  filter: url(#parchment-squiggle);
-  pointer-events: none;
-  z-index: 1; /* Changed to 1 so the border sits ON TOP of the blue background */
-}
 .viewport-box {
     position: absolute;
     pointer-events: none;
@@ -121,31 +102,28 @@
 
     /* 1. Transparent Background */
     background-color: transparent;
-
-    /* 2. The White Cross-Hatch Stack */
+ /* 2. The White Cross-Hatch Stack */
     background-image:
         /* Layer 1: Thick diagonal strokes (45deg) - White/Chalk */
         repeating-linear-gradient(
             45deg,
-            rgba(255, 255, 255, 0.3) 0px,
-            rgba(255, 255, 255, 0.3) 2px,
+            rgba(255,255,255, 0.2) 0px,
+            rgba(255,255,255, 0.2) 2px,
             transparent 2px,
             transparent 8px
         ),
         /* Layer 2: Thinner, steeper strokes (-60deg) - White/Chalk */
         repeating-linear-gradient(
             -60deg,
-            rgba(255, 255, 255, 0.2) 0px,
-            rgba(255, 255, 255, 0.2) 1px,
+            rgba(255,255,255, 0.2) 0px,
+            rgba(255,255,255, 0.2) 1px,
             transparent 1px,
             transparent 6px
         );
 
-    /* 3. Rough Edges */
-    border-radius: 2px 255px 3px 25px / 255px 5px 22px 3px;
 
     /* 4. Border Color (White sketch) */
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255,255,255, 0.2);
 }
 
   .yaxis {
@@ -153,7 +131,7 @@
     left: 50%;
     top: 11%;
     height: 78%;
-    border-left: 1px solid rgb(232, 249, 255);
+    border-left: 1px solid rgb(255,255,255);
     z-index: 60;
   }
 
@@ -162,16 +140,16 @@
     top: 50%;
     left: 11%;
     width: 78%;
-    border-top: 1px solid rgb(232, 249, 255);
+    border-top: 1px solid rgb(255,255,255);
     z-index: 60;
   }
 
   .compassLabel {
     position: absolute;
-    font-size: clamp(12px, 1.2vw, 16px);
+    font-size: clamp(12px, 1.2vw, 12px);
     line-height: 1;
-    font-weight: 300;
-    color: rgb(232, 249, 255);
+    font-weight: 400;
+    color: rgb(255,255,255);
     z-index: 70;
   }
 

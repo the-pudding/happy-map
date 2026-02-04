@@ -22,68 +22,33 @@
 </div>
 
 <style>
+
   .introText {
     position: absolute;
     z-index: 999999;
-    left: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     bottom: 20px;
-    width: 320px;
-    padding: 30px;
+    width: 420px;
+    max-width: calc(100% - 40px);
+    padding: 20px;
+
 
     /* Font settings */
-    font-family: "Patrick Hand SC", cursive;
+    font-family: var(--handwriting);
     color: black;
 
     /* 1. Remove the default background (the ::before element will handle it) */
-    background: #cfe3d4;
+    background: var(--color-textbg);
+    border-radius: 10px;
   }
 
-  /* The "Hand Drawn" Paper Background */
-  .introText::before {
-    content: "";
-    position: absolute;
 
-    /* 2. Positioning: Stretch slightly outside the text content */
-    inset: 0;
 
-    /* 3. The White Paper & Ink Border */
-    background: #cfe3d4;
-    border: 1px solid #000; /* Black ink border */
 
-    /* 4. Organic Shape (Messy corners) */
-    /* border-radius: 2% 1% 2% 3% / 3% 2% 1% 2%; */
-
-    /* 5. The Wiggle Filter (Must match the ID in your HTML SVG) */
-    filter: url(#parchment-squiggle);
-
-    /* 6. Layering: Put it BEHIND the text */
-    z-index: -1;
-
-    /* 7. Optional: Paper Shadow for depth */
-    box-shadow: 3px 4px 0px rgba(0, 0, 0, 0.15);
-
-    /* 8. Anti-aliasing trick: slightly larger border helps smooth the wiggle */
-    /* If it looks pixelated, increase border width to 3px */
-  }
-
-  .introText :global(h1) {
-    font-size: 30px;
-    /* color: #ffec70; */
-    /* line-height: 15px; */
-    margin: 0 0 10px 0;
-    text-align: center;
-  }
-
-  .introText :global(.byline) {
-    font-size: 20px;
-    line-height: 15px;
-    margin: 0 0 30px 0;
-    text-align: center;
-    text-decoration: none;
-  }
 
   .introText :global(p) {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 22px;
     /* color: #dff4f5; */
     font-family: var(--sans);
@@ -101,15 +66,7 @@
     border-bottom: 1px solid #4da7a8;
   }
 
-  .introText :global(.byline a) {
-    color: #e100ff !important;
-    border-bottom: 1px dotted #e100ff;
-  }
 
-  .introText :global(.byline a:hover) {
-    color: #f263ff !important;
-    border-bottom: 1px dotted #b200c2;
-  }
 
   .introText :global(.introSpan) {
     color: #ffec70;
@@ -131,8 +88,8 @@
   }
 
   .introText button {
-    font-family: "Patrick Hand SC", cursive;
-    font-size: 20px;
+    font-family: var(--handwriting);
+    font-size: 16px;
     position: absolute;
     width: calc(50% - 5px);
     color: black;
@@ -158,10 +115,11 @@
           transparent 1px,
           transparent 5px
         ),
-      /* Layer 3: The base blue color */ #cfe3d4;
+      /* Layer 3: The base blue color */ var(--color-textbg);
 
     /* Optional: If you want a border to define the button edge */
     border: 1px solid rgba(0,0,0,0.5);
+    border-radius: 20px;
   }
 
   .introText button:hover {
@@ -185,7 +143,7 @@
           transparent 1px,
           transparent 5px
         ),
-      /* Layer 3: The base blue color */ #cfe3d4;
+      /* Layer 3: The base blue color */ var(--color-textbg);
 
     /* Optional: If you want a border to define the button edge */
      border: 1px solid rgba(0,0,0,0.5);

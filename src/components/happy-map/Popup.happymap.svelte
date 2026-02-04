@@ -17,8 +17,7 @@
       <button class="popup-close" onclick={close}>×</button>
       <div class="info">
         {Math.round(popupInfo.data[3])} / {popupInfo.data[5].toUpperCase()} / {convertCountries(
-          popupInfo.data[4]
-        )}
+          popupInfo.data[4])}
         <br />
         <span>
           {popupInfo.data[6].charAt(0).toUpperCase() +
@@ -50,8 +49,7 @@
     border-radius: 4px;
     box-shadow: 0 3px 14px rgba(0, 0, 0, 0.4);
     width: 280px;
-    /* font-family: var(--sans); */
-     font-family: "Patrick Hand SC", cursive;
+    font-family: var(--sans);
     position: relative;
   }
 
@@ -78,8 +76,8 @@
   }
 
   .popup-content .info {
-    font-size: 18px;
-    color: #666;
+    font-size: 13px;
+    color: #000;
     margin-bottom: 5px;
     border-bottom: 1px solid #eee;
     padding-bottom: 2px;
@@ -93,11 +91,11 @@
   }
 
   .popup-content .quote {
-    font-size: 18px;
-    line-height: 1;
+    font-size: 14px;
+    line-height: 1.3em;
     color: #000;
     /* font-family: var(--serif); */
-     font-family: "Patrick Hand SC", cursive;
+     font-family: var(--handwriting);
   }
 
   .debug-id {

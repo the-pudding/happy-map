@@ -24,7 +24,8 @@ export default defineConfig({
 			$runes: path.resolve("./src/runes"),
 			$styles: path.resolve("./src/styles"),
 			$svg: path.resolve("./src/svg"),
-			$utils: path.resolve("./src/utils")
+			$utils: path.resolve("./src/utils"),
+			$assets: path.resolve("./static/assets"),
 		}
 	},
 	ssr: {

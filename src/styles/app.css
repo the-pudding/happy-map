@@ -12,6 +12,7 @@
     sans-serif;
   --serif: "Tiempos Text", Iowan Old Style, Times New Roman, Times, serif;
   --mono: Menlo, Consolas, Monaco, monospace;
+  --handwriting: "Playpen Sans", cursive;
 
   /* z-index */
   --z-bottom: -100;
@@ -38,6 +39,7 @@
   --color-input-bg: var(--color-gray-50);
   --color-input-fg: var(--color-gray-900);
   --color-placeholder: var(--color-gray-500);
+  --color-textbg: #fff;
 
   /* "1" second duration */
   --1s: 1ms;
@@ -109,9 +111,9 @@ html {
   padding: 10px 15px;
   cursor: pointer;
   /* font-family: var(--sans); */
-  font-family: "Patrick Hand SC", "cursive";
+  font-family: var(--handwriting);
   z-index: 9;
-  font-size: 19px;
+  font-size: 16px;
 
   /* 1. Remove the default border (the pseudo-element handles it now) */
   border: none;
@@ -121,31 +123,6 @@ html {
   border-radius: 4px 6px 3px 5px / 5px 3px 6px 4px;
 }
 
-/* The Squiggly Border Overlay */
-.filterButton::before,
-#showinfo::before {
-  content: "";
-  position: absolute;
-
-  /* --- THE SMOOTHING FIX --- */
-
-  /* 1. Make the box double the size of the button */
-  inset: -50%;
-
-  /* 2. Scale it back down to fit. This creates the "High Res" effect */
-  transform: scale(0.5);
-
-  /* 3. Double the border thickness (4px becomes 2px visually) */
-  border: 2px solid #fff;
-
-  /* 4. Double the border radius so it matches the parent when shrunk */
-  border-radius: 8px 12px 6px 10px / 10px 6px 12px 8px;
-
-  /* --- Standard Filter Stuff --- */
-  filter: url(#parchment-squiggle);
-  pointer-events: none;
-  z-index: 1;
-}
 .filterButton:hover,
 #showinfo:hover {
   background: #284b73;
@@ -153,6 +130,22 @@ html {
 .filterButton { top: 10px; }
 #showinfo { top: 55px; }
 
+
+.introText h1, .infoPanel h1 {
+    font-size: 20px;
+    /* color: #ffec70; */
+    /* line-height: 15px; */
+    margin: 0 0 10px 0;
+    text-align: center;
+  }
+
+  .introText .byline, .infoPanel .byline {
+    font-size: 15px;
+    line-height: 15px;
+    margin: 0 0 30px 0;
+    text-align: center;
+    text-decoration: none;
+  }
 
 /* ============================================
    Debug Panel (development only)

@@ -3,6 +3,7 @@
   import { Deck, OrthographicView } from "@deck.gl/core";
   import { TileLayer } from "@deck.gl/geo-layers";
   import { BitmapLayer, IconLayer } from "@deck.gl/layers";
+  import { DataFilterExtension } from "@deck.gl/extensions";
   import {
     matchesFilters,
     getIconName,
@@ -22,6 +23,10 @@
   import Compass from "$components/happy-map/Compass.happymap.svelte";
   import copy from "$data/copy.json";
 
+  // Icon Atlas
+  import iconMapping from "$data/icon-mapping.json";
+  const ICON_ATLAS = "assets/icon-atlas.png";
+
   let {
     filters,
     introShown,
@@ -30,10 +35,10 @@
     onReady
   } = $props();
   let fontLoaded = $state(false);
+  let lastPopupUpdate = 0;
 
   // --- CONSTANTS ---
-  const MAX_ICONS = 2000;
-  const ICON_SIZE = { width: 120, height: 225 };
+  const MAX_ICONS = 4000;
   const POPUP_OFFSET = 1.8;
   const ZOOM_STEP = 0.5;
 
@@ -58,8 +63,11 @@
   });
   let wiggleOffset = $state(0);
 
+  // Pre-processed dots for GPU filtering
+  let processedDots = null;
+
   // --- HELPERS ---
-  const getIconSize = (zoom) => 5 + Math.pow(zoom, 1.7) * 2;
+  const getIconSize = (zoom) => 6 + Math.pow(zoom, 2);
   const getWaveScale = (zoom) => 0.6 + zoom * 0.25;
 
   const opacityAnimator = createOpacityAnimator((opacity) => {
@@ -71,73 +79,6 @@
     wiggleOffset = offset;
     if (deck) renderDeck();
   });
-
-  function createWaveData() {
-    const waves = [];
-    const center = 128;
-    const minDistFromCenter = 80;
-    const minWaveDistance = 20;
-
-    // Fixed seed points spread across the area
-    const seedPoints = [];
-    for (let i = 0; i < 500; i++) {
-      // Deterministic pseudo-random based on index
-      const seed1 = ((i * 127 + 43) % 1000) / 1000;
-      const seed2 = ((i * 311 + 97) % 1000) / 1000;
-
-      // Use seeds to place points in a circular pattern with randomness
-      const angle = seed1 * Math.PI * 2;
-      const radius = minDistFromCenter + seed2 * 200;
-
-      const x = center + Math.cos(angle) * radius + ((i * 173) % 100 - 50) * 0.5;
-      const y = center + Math.sin(angle) * radius + ((i * 241) % 100 - 50) * 0.5;
-
-      seedPoints.push({ x, y, i });
-    }
-
-    // Filter points that are too close to each other
-    for (const point of seedPoints) {
-      const { x, y, i } = point;
-
-      // Check distance from center
-      const dist = Math.sqrt((x - center) ** 2 + (y - center) ** 2);
-      if (dist < minDistFromCenter) continue;
-
-      // Check distance to existing waves
-      let tooClose = false;
-      for (const wave of waves) {
-        const dx = x - wave.x;
-        const dy = y - wave.y;
-        if (Math.sqrt(dx * dx + dy * dy) < minWaveDistance) {
-          tooClose = true;
-          break;
-        }
-      }
-      if (tooClose) continue;
-
-      // Fewer waves at edges
-      const edgeDist = dist - minDistFromCenter;
-      const seed3 = ((i * 89 + 199) % 1000) / 1000;
-      const skipChance = Math.pow(edgeDist / 200, 2);
-      if (seed3 < skipChance) continue;
-
-      // Deterministic properties
-      const seed4 = ((i * 53 + 97) % 1000) / 1000;
-      const seed5 = ((i * 151 + 263) % 1000) / 1000;
-
-      waves.push({
-        x,
-        y,
-        waveType: 1 + Math.floor(seed4 * 7),
-        rotation: 0,
-        opacity: Math.max(0.15, 0.5 - (edgeDist / 300))
-      });
-
-      if (waves.length >= 100) break;
-    }
-
-    return waves;
-  }
 
   function handleZoomIn() {
     const newZoom = Math.min(viewState.zoom + ZOOM_STEP, viewState.maxZoom);
@@ -161,12 +102,47 @@
     deck?.setProps({ initialViewState: viewState });
   }
 
+  // Process dots once, filter on GPU
+  function getProcessedDots() {
+    if (processedDots) return processedDots;
+
+    // Collect story target IDs that must be included
+    const mustInclude = new Set(storyTargetIds);
+
+    // Start with story dots
+    const dotsToProcess = [];
+    const includedIds = new Set();
+
+    // First, add all story target dots
+    for (const dot of allDots) {
+      if (mustInclude.has(dot._stableId)) {
+        dotsToProcess.push(dot);
+        includedIds.add(dot._stableId);
+      }
+    }
+
+    // Then fill up to MAX_ICONS with remaining dots
+    for (const dot of allDots) {
+      if (dotsToProcess.length >= MAX_ICONS) break;
+      if (includedIds.has(dot._stableId)) continue;
+      dotsToProcess.push(dot);
+    }
+
+    const dotsToRender = spreadDotsToGrid(dotsToProcess);
+
+    // Sort by Y once for proper rendering order
+    processedDots = [...dotsToRender].sort((a, b) => a[1] - b[1]);
+
+    return processedDots;
+  }
+
   // --- DATA LOADING ---
   async function loadData() {
     try {
-      const [labelsRes, dotsRes] = await Promise.all([
+      const [labelsRes, dotsRes, wavesRes] = await Promise.all([
         fetch("assets/labels_cleaned.json"),
-        fetch("assets/interaction.json")
+        fetch("assets/interaction.json"),
+        fetch("assets/waves.json")
       ]);
 
       const labelsRaw = await labelsRes.json();
@@ -187,6 +163,8 @@
       allDots = shuffle(rawDots).sort(
         (a, b) => (b.rank_score ?? -Infinity) - (a.rank_score ?? -Infinity)
       );
+
+      waveData = await wavesRes.json();
     } catch (err) {
       console.error("Error loading data:", err);
     }
@@ -206,45 +184,18 @@
       return;
     }
 
-    // Filter dots
-    const dotsToFilter = [];
-    const includedIds = new Set();
-
-    const storyDot =
-      storyActiveIndex !== -1 &&
-      allDots.find((d) => d._stableId === storyActiveIndex);
-    if (storyDot) {
-      storyDot._isActive = true;
-      dotsToFilter.push(storyDot);
-      includedIds.add(storyDot._stableId);
-    }
-
-    for (const targetId of storyTargetIds) {
-      if (includedIds.has(targetId)) continue;
-      const dot = allDots.find((d) => d._stableId === targetId);
-      if (dot) {
-        dot._isActive = false;
-        dotsToFilter.push(dot);
-        includedIds.add(targetId);
-      }
-    }
-
-    for (const p of allDots) {
-      if (dotsToFilter.length >= MAX_ICONS) break;
-      if (includedIds.has(p._stableId)) continue;
-      if (!matchesFilters(p, filters)) continue;
-      p._isActive = false;
-      dotsToFilter.push(p);
-    }
-
-    const dotsToRender = spreadDotsToGrid(dotsToFilter);
-    const sortedDots = [...dotsToRender].sort((a, b) => a[1] - b[1]);
-
+    const sortedDots = getProcessedDots();
     const selectedId = popupInfo?.data?._stableId;
+
+    const dataFilterExtension = new DataFilterExtension({ filterSize: 1 });
 
     const iconLayer = new IconLayer({
       id: "dots",
       data: sortedDots,
+
+      iconAtlas: ICON_ATLAS,
+      iconMapping: iconMapping,
+
       getPosition: (d) => {
         const baseX = d[0] * 256;
         const baseY = d[1] * 256;
@@ -253,25 +204,32 @@
         }
         return [baseX, baseY];
       },
-      getIcon: (d) => ({
-        url: `assets/icons/${getIconName(d)}.png`,
-        ...ICON_SIZE,
-        mask: false,
-        anchorY: ICON_SIZE.height
-      }),
-      getSize: () => getIconSize(viewState.zoom),
-      getColor: () => [255, 255, 255, 255],
-      sizeScale: window.devicePixelRatio || 1,
+
+      getIcon: (d) => getIconName(d),
+      getSize: () => getIconSize(viewState.zoom) * 1.5,
+
+      sizeScale: 1,
       sizeUnits: "pixels",
       pickable: true,
       alphaCutoff: 0,
       billboard: true,
       parameters: { depthTest: false },
-      textureParameters: { minFilter: "linear", magFilter: "linear" },
-      updateTriggers: {
-        getColor: [backgroundOpacity, storyActiveIndex],
-        getPosition: [wiggleOffset, selectedId]
+
+      // GPU FILTERING
+      getFilterValue: (d) => {
+        if (d._stableId === storyActiveIndex) return 1;
+        if (storyTargetIds.has(d._stableId)) return 1;
+        return matchesFilters(d, filters) ? 1 : 0;
       },
+      filterRange: [1, 1],
+      extensions: [dataFilterExtension],
+
+      updateTriggers: {
+        getPosition: [wiggleOffset, selectedId],
+        getSize: [viewState.zoom],
+        getFilterValue: [JSON.stringify(filters), storyActiveIndex]
+      },
+
       onClick: ({ object }) => {
         if (!object) return;
         const viewport = deck.getViewports()[0];
@@ -294,11 +252,10 @@
         url: `assets/wave${d.waveType}.svg`,
         width: 200 * 3,
         height: 50 * 3
-        // mask: true
       }),
       getSize: () => getWaveScale(viewState.zoom) * 20,
       getAngle: (d) => 180 + d.rotation * (180 / Math.PI),
-      getColor: (d) => [0, 0, 0, Math.floor(d.opacity * 400)], // Black with opacity
+      getColor: (d) => [0, 0, 0, Math.floor(d.opacity * 400)],
       sizeScale: window.devicePixelRatio || 1,
       sizeUnits: "pixels",
       billboard: false,
@@ -324,20 +281,39 @@
   }
 
   export function flyTo(targetX, targetY, zoom) {
-    viewState = {
-      ...viewState,
+    const newViewState = {
       target: [targetX, targetY, 0],
       zoom,
+      minZoom: 0,
+      maxZoom: 6,
       transitionDuration: 2500,
       transitionInterpolator: new OrthographicFlyToInterpolator()
     };
-    deck?.setProps({ initialViewState: viewState });
+
+    viewState = newViewState;
+    deck?.setProps({ initialViewState: newViewState });
+  }
+
+  export function flyToDot(stableId, zoom) {
+    const dots = getProcessedDots();
+    if (!dots || dots.length === 0) return;
+
+    const dot = dots.find((d) => d._stableId === stableId);
+    if (!dot) return;
+
+    const targetX = dot[0] * 256;
+    const targetY = dot[1] * 256;
+
+    flyTo(targetX, targetY, zoom);
   }
 
   export function showPopupForDot(stableId) {
-    const dot = allDots.find((d) => d._stableId === stableId);
+    const dots = getProcessedDots();
+    const dot = dots.find((d) => d._stableId === stableId);
+
     const viewport = deck?.getViewports()[0];
     if (!dot || !viewport) return;
+
     const [x, y] = viewport.project([dot[0] * 256, dot[1] * 256]);
     popupInfo = {
       x,
@@ -352,10 +328,9 @@
     await loadData();
 
     document.fonts.load('400 16px "Patrick Hand SC"').then(() => {
-    console.log("Font loaded!");
-    fontLoaded = true; // <--- Flip the switch
-    if (deck) renderDeck();
-  });
+      fontLoaded = true;
+      if (deck) renderDeck();
+    });
 
     if (!canvasElement.offsetWidth || !canvasElement.offsetHeight) {
       canvasElement.style.width = "100%";
@@ -364,10 +339,6 @@
 
     viewState = { ...viewState, zoom: getInitialZoom() };
 
-    // Create wave data
-    waveData = createWaveData();
-
-    // Shallow water layer
     shallowWaterLayer = new BitmapLayer({
       id: "shallow-water",
       image: "assets/ocean-glow-varied.png",
@@ -387,20 +358,13 @@
       extent: [0, 0, 256, 256],
       refinementStrategy: "best-available",
       getTileData: async ({ index: { x, y, z } }) => {
-        try {
-          const response = await fetch(`assets/tiles/${z}/${x}/${y}.png`);
-          if (!response.ok) return null;
-          const blob = await response.blob();
+        return new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = "anonymous";
-          return new Promise((resolve) => {
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(null);
-            img.src = URL.createObjectURL(blob);
-          });
-        } catch {
-          return null;
-        }
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null); // Silently fail
+          img.src = `assets/tiles/${z}/${x}/${y}.png`;
+        });
       },
       renderSubLayers: ({ id, data, tile }) => {
         if (!data) return null;
@@ -433,6 +397,11 @@
       },
       onAfterRender: () => {
         if (!popupInfo?.data) return;
+
+        const now = performance.now();
+        if (now - lastPopupUpdate < 33) return;
+        lastPopupUpdate = now;
+
         const viewport = deck.getViewports()[0];
         if (!viewport) return;
         const [newX, newY] = viewport.project([
@@ -448,7 +417,17 @@
         }
       },
       onClick: ({ object }) => {
-        if (!object) {
+        if (object) {
+          const viewport = deck.getViewports()[0];
+          if (!viewport) return;
+          const [x, y] = viewport.project([object[0] * 256, object[1] * 256]);
+          popupInfo = {
+            x,
+            y: y - getIconSize(viewState.zoom) * POPUP_OFFSET,
+            data: object
+          };
+          wiggleAnimator.start();
+        } else {
           popupInfo = null;
           wiggleAnimator.stop();
         }
