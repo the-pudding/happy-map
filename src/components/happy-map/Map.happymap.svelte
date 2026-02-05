@@ -10,10 +10,7 @@
     shuffle,
     getInitialZoom
   } from "$components/helpers/textUtils.js";
-  import {
-    createLabelLayers,
-    spreadDotsToGrid
-  } from "$components/helpers/labelUtils.js";
+  import { createLabelLayers, spreadDotsToGrid } from "$components/helpers/labelUtils.js";
   import {
     OrthographicFlyToInterpolator,
     createOpacityAnimator,
@@ -276,6 +273,10 @@
   }
 
   // --- EXPORTED METHODS ---
+  export function focus() {
+    canvasElement?.focus();
+  }
+
   export function animateOpacity(targetOpacity, duration = 500) {
     opacityAnimator.animate(backgroundOpacity, targetOpacity, duration);
   }
@@ -382,7 +383,7 @@
       width: "100%",
       height: "100%",
       initialViewState: viewState,
-      controller: { doubleClickZoom: false, keyboard: false },
+      controller: { doubleClickZoom: true, keyboard: { moveSpeed: -50 } },
       views: new OrthographicView({ id: "ortho" }),
       pickingRadius: 15,
       getCursor: ({ isDragging, isHovering }) =>
@@ -398,10 +399,6 @@
       onAfterRender: () => {
         if (!popupInfo?.data) return;
 
-        const now = performance.now();
-        if (now - lastPopupUpdate < 33) return;
-        lastPopupUpdate = now;
-
         const viewport = deck.getViewports()[0];
         if (!viewport) return;
         const [newX, newY] = viewport.project([
@@ -409,10 +406,7 @@
           popupInfo.data[1] * 256
         ]);
         const y = newY - getIconSize(viewState.zoom) * POPUP_OFFSET;
-        if (
-          Math.abs(popupInfo.x - newX) > 0.5 ||
-          Math.abs(popupInfo.y - y) > 0.5
-        ) {
+        if (popupInfo.x !== newX || popupInfo.y !== y) {
           popupInfo = { ...popupInfo, x: newX, y };
         }
       },
@@ -453,7 +447,7 @@
 </script>
 
 <div class="map-container">
-  <canvas bind:this={canvasElement} class="deck-canvas"></canvas>
+  <canvas bind:this={canvasElement} class="deck-canvas" tabindex="0"></canvas>
   <Popup bind:popupInfo />
   {#if !introShown}
     <Compass {deck} {viewState} />
@@ -489,6 +483,7 @@
     width: 100%;
     height: 100%;
     display: block;
+    outline: none;
   }
 
   .zoom-controls {

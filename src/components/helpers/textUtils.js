@@ -207,24 +207,62 @@ export function getIconName(p) {
   return `${ageGroup}-${sex}-${variant}`;
 }
 
+function lerp(start, end, t) {
+  return start * (1 - t) + end * t;
+}
+
 export function getLabelSize(type, zoom) {
+  // Define keyframes: [ZoomLevel, FontSize]
+  // This maps exactly to your previous "steps" but allows for smoothing between them.
+  let keyframes = [];
+
   if (type === "l1") {
-    if (zoom < 1) return 10;
-    if (zoom < 2) return 12;
-    if (zoom < 3) return 16;
-    if (zoom < 4) return 22;
-    if (zoom < 5) return 30;
-    return 40;
+    keyframes = [
+      [0, 10],
+      [1, 12],
+      [2, 16],
+      [3, 18],
+      [4, 23],
+      [5, 40],
+      [6, 50] // Extrapolated for higher zooms
+    ];
+  } else if (type === "l2") {
+    keyframes = [
+      [0, 16],
+      [3, 16], // Keeps size 16 until zoom 3
+      [4, 16], // Starts growing smoothly after zoom 4
+      [5, 18],
+      [6, 24]
+    ];
+  } else {
+    // l3 and default
+    keyframes = [
+      [0, 14],
+      [4, 14],
+      [5, 14], // Starts growing smoothly after zoom 5
+      [6, 16],
+      [7, 18]
+    ];
   }
-  if (type === "l2") {
-    if (zoom < 4) return 16;
-    if (zoom < 5) return 18;
-    return 24;
+
+  // 1. Handle Out of Bounds (Zoom lower than min or higher than max)
+  if (zoom <= keyframes[0][0]) return keyframes[0][1];
+  if (zoom >= keyframes[keyframes.length - 1][0]) return keyframes[keyframes.length - 1][1];
+
+  // 2. Find the two keyframes surrounding the current zoom
+  for (let i = 0; i < keyframes.length - 1; i++) {
+    const [zStart, sizeStart] = keyframes[i];
+    const [zEnd, sizeEnd] = keyframes[i + 1];
+
+    if (zoom >= zStart && zoom < zEnd) {
+      // Calculate percentage (t) between the two zoom levels
+      const t = (zoom - zStart) / (zEnd - zStart);
+      // Return the interpolated size
+      return lerp(sizeStart, sizeEnd, t);
+    }
   }
-  // l3
-  if (zoom < 5) return 14;
-  if (zoom < 6) return 16;
-  return 18;
+
+  return keyframes[0][1];
 }
 
 export function shuffle(array) {
