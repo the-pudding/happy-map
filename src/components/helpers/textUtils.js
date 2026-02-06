@@ -163,6 +163,7 @@ export function getFontSize(type, currentZoom) {
   }
 
 export function matchesFilters(p, filters) {
+  // console.log("Filter check:", p[3], p[4], p[5], filters.location);
   const isUS = p[4] === "USA";
   if (isUS && !filters.location.us) return false;
   if (!isUS && !filters.location.nonUs) return false;

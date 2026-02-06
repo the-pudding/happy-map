@@ -15,7 +15,7 @@
   let isFilterPanelOpen = $state(false);
   let storyActiveIndex = $state(-1);
   let popupInfo = $state(null);
-  let filters = $state({ ...DEFAULT_FILTERS });
+  let filters = $state(structuredClone(DEFAULT_FILTERS));
 
   // --- MAP REF ---
   let mapComponent;
@@ -136,9 +136,9 @@
     onclick={filterToggle}
     transition:fade
   >
-    Filter Responses
+    Filter
   </button>
-  <button id="showinfo" onclick={() => infoToggle(!infoShown)} transition:fade>Show info</button>
+  <button id="showinfo" onclick={() => infoToggle(!infoShown)} transition:fade>Info</button>
   <FilterPanel bind:filters bind:isOpen={isFilterPanelOpen} />
   <InfoPanel bind:isOpen={infoShown} />
 {/if}

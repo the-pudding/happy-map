@@ -31,7 +31,7 @@
     height: 100vh;
     width: 350px;
     padding: 60px 25px 25px;
-    background: #001126;
+    background: var(--paneldark);
     color: white;
     z-index: 99999;
     border-left: 1px solid #264a5c;
@@ -41,7 +41,7 @@
 
   .infoPanel h1 {
     font-size: 22px;
-    color: #ffec70;
+    /* color: #ffec70; */
     margin: 0 0 10px 0;
     line-height: 1;
     font-family: var(--handwriting);
@@ -50,28 +50,27 @@
 
   .infoPanel .byline {
     font-size: 13px;
-    color: #8db1b3;
+    /* color: #8db1b3; */
     margin-bottom: 25px;
     border-bottom: 1px solid #264a5c;
     padding-bottom: 15px;
   }
 
   .infoPanel :global(a) {
-    color: #57bff2;
+    color: var(--hlcolor);
     text-decoration: none;
-    border-bottom: 1px dotted #57bff2;
+    border-bottom: 1px dotted var(--hlcolor);
   }
 
   .infoPanel :global(a:hover) {
-    color: #68ddde;
-    border-bottom: 1px solid #4da7a8;
+    border-bottom: 1px solid var(--hlcolor);
   }
 
   .infoPanel :global(h4) {
     margin: 25px 0 10px 0;
     font-size: 13px;
     font-weight: bold;
-    color: #9effdc;
+    color: var(--panelhl);
     text-transform: uppercase;
     letter-spacing: 1px;
     border-bottom: 1px solid #264a5c;

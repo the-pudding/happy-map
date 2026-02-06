@@ -1122,7 +1122,7 @@
     top: 0px;
     width: 240px;
     height: 100vh;
-    background: #001126;
+    background: var(--paneldark);
     color: white;
     padding: 60px 15px 15px 15px;
     z-index: 99999;
@@ -1158,7 +1158,7 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #9effdc;
+    color: var(--panelhl);
     font-weight: bold;
   }
   .group-actions button {
@@ -1213,7 +1213,7 @@
 
   /* Hover state for the box */
   .filterPanel input[type="checkbox"]:hover {
-    border-color: #9effdc;
+    border-color: var(--panelhl);
     background-color: rgba(158, 255, 220, 0.1);
   }
 
@@ -1224,8 +1224,8 @@
     height: 10px;
     transform: scale(0); /* Hidden */
     transition: 0.1s transform ease-in-out;
-    box-shadow: inset 1em 1em #001126; /* The color of the checkmark itself (dark blue) */
-    background-color: #001126;
+    box-shadow: inset 1em 1em var(--paneldark); /* The color of the checkmark itself (dark blue) */
+    background-color: var(--paneldark);
     transform-origin: center;
     /* Create the check shape */
     clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
@@ -1233,8 +1233,8 @@
 
   /* CHECKED STATE */
   .filterPanel input[type="checkbox"]:checked {
-    background-color: #9effdc; /* Bright green background */
-    border-color: #9effdc;
+    background-color: var(--panelhl); /* Bright green background */
+    border-color: var(--panelhl);
   }
 
   .filterPanel input[type="checkbox"]:checked::before {
@@ -1250,7 +1250,7 @@
     width: 350px; /* Slightly wider than filter panel for reading */
     max-width: 100%;
     height: 100vh;
-    background: #001126;
+    background: var(--paneldark);
     color: white;
     padding: 60px 25px 25px 25px; /* Top padding clears the buttons */
     z-index: 99999;

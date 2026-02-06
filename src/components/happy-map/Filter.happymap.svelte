@@ -2,9 +2,10 @@
   let { filters = $bindable(), isOpen = $bindable() } = $props();
 
   function toggleGroup(groupName, value) {
-    const keys = Object.keys(filters[groupName]);
-    keys.forEach((key) => (filters[groupName][key] = value));
-  }
+  const keys = Object.keys(filters[groupName]);
+  keys.forEach((key) => (filters[groupName][key] = value));
+  filters = structuredClone(filters); // Force reactivity
+}
 
   function close() {
     isOpen = false;
@@ -128,7 +129,7 @@
     height: 100vh;
     width: 240px;
     padding: 60px 15px 15px;
-    background: #001126;
+    background: var(--paneldark);
     color: white;
     z-index: 99999;
     border-left: 1px solid #264a5c;
@@ -159,7 +160,7 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #9effdc;
+    color: var(--panelhl);
     font-weight: bold;
   }
 
@@ -210,7 +211,7 @@
   }
 
   .filterPanel input[type="checkbox"]:hover {
-    border-color: #9effdc;
+    border-color: var(--panelhl);
     background-color: rgba(158, 255, 220, 0.1);
   }
 
@@ -220,14 +221,14 @@
     height: 10px;
     transform: scale(0);
     transition: 0.1s transform;
-    background-color: #001126;
+    background-color: var(--paneldark);
     clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-    box-shadow: inset 1em 1em #001126;
+    box-shadow: inset 1em 1em var(--paneldark);
   }
 
   .filterPanel input[type="checkbox"]:checked {
-    background-color: #9effdc;
-    border-color: #9effdc;
+    background-color: var(--panelhl);
+    border-color: var(--panelhl);
   }
 
   .filterPanel input[type="checkbox"]:checked::before {

@@ -3,7 +3,6 @@
 @import "font.css";
 @import "reset.css";
 
-
 /* colors defined in variables.css */
 :root {
   /* font */
@@ -40,7 +39,31 @@
   --color-input-fg: var(--color-gray-900);
   --color-placeholder: var(--color-gray-500);
   --color-textbg: #fff;
+  --hlcolor: #ff00a6;
+  /*   --popupbg: #f5f0e6;
+  --popuptext: #000;
+  --buttonbg: #f5f0e6;
+  --buttontext: #000;
+  --crosshatch: rgba(139, 119, 92, 0.2);
+  --compassbg: #5a7a8a;
+  --compasscrosshatch: rgba(255,255,255,0.2);
+  --compasscrosstext: #fff;
+ */
+  --popupbg: #ffffff;
+  --popuptext: #1e2225;
 
+--buttonbg: #2c3840;
+--buttonbg-hover: #3a4850;
+--buttontext: #f0f2f4;
+--buttonborder: 2px solid #6a7a85;
+--buttonboxshadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+--panelhl: #9effdc;
+--paneldark: #001126;
+
+  --crosshatch: rgba(40, 60, 70, 0.08);
+  --compassbg: rgba(40, 60, 75, 0.99);
+  --compasscrosshatch: rgba(255, 255, 255, 0.25);
+  --compasstext: #ffffff;
   /* "1" second duration */
   --1s: 1ms;
 }
@@ -55,12 +78,24 @@
    Base Typography
    ============================================ */
 
-h1 { font-size: var(--48px, 48px); }
-h2 { font-size: var(--36px, 36px); }
-h3 { font-size: var(--28px, 28px); }
-h4 { font-size: var(--24px, 24px); }
-h5 { font-size: var(--22px, 22px); }
-h6 { font-size: var(--20px, 20px); }
+h1 {
+  font-size: var(--48px, 48px);
+}
+h2 {
+  font-size: var(--36px, 36px);
+}
+h3 {
+  font-size: var(--28px, 28px);
+}
+h4 {
+  font-size: var(--24px, 24px);
+}
+h5 {
+  font-size: var(--22px, 22px);
+}
+h6 {
+  font-size: var(--20px, 20px);
+}
 
 svg {
   display: block;
@@ -87,7 +122,7 @@ html {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #486C94 !important;
+  background-color: #486c94 !important;
   z-index: 1;
   overflow: hidden;
 }
@@ -106,46 +141,77 @@ html {
   position: absolute;
   right: 10px;
   /* background: #36577d; */
-  background: #36577d;
-  color: white;
-  padding: 10px 15px;
+  background: var(--buttonbg);
+  color: var(--buttontext);
+  padding: 7px 15px;
   cursor: pointer;
   /* font-family: var(--sans); */
   font-family: var(--handwriting);
   z-index: 9;
-  font-size: 16px;
-
+  font-size: 14px;
+  border-radius: 20px;
   /* 1. Remove the default border (the pseudo-element handles it now) */
-  border: none;
-
+  border: var(--buttonborder);
+  box-shadow: var(--buttonboxshadow);
   /* 2. "Hand-drawn" Box Shape
      Small pixel variations work better than % for small buttons */
-  border-radius: 4px 6px 3px 5px / 5px 3px 6px 4px;
+  /* border-radius: 4px 6px 3px 5px / 5px 3px 6px 4px; */
 }
 
 .filterButton:hover,
 #showinfo:hover {
-  background: #284b73;
+  background: var(--buttonbg-hover);
 }
-.filterButton { top: 10px; }
-#showinfo { top: 55px; }
-
-
-.introText h1, .infoPanel h1 {
-    font-size: 20px;
-    /* color: #ffec70; */
-    /* line-height: 15px; */
-    margin: 0 0 10px 0;
-    text-align: center;
+.filterButton {
+  margin-top: 20px;
+  top: clamp(130px, 18vw, 180px);
+}
+#showinfo {
+  margin-top: 20px;
+  top: clamp(130px, 18vw, 180px);
+  right: 83px;
+}
+@media (max-width: 1200px) {
+  .filterButton {
+    margin-top: 20px;
+    top: 0;
   }
-
-  .introText .byline, .infoPanel .byline {
-    font-size: 15px;
-    line-height: 15px;
-    margin: 0 0 30px 0;
-    text-align: center;
-    text-decoration: none;
+  #showinfo {
+    margin-top: 20px;
+    top: 0;
+    right: 83px;
   }
+}
+
+.introText h1,
+.infoPanel h1 {
+  font-size: 20px;
+  /* color: #ffec70; */
+  /* line-height: 15px; */
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.introText .byline,
+.infoPanel .byline {
+  font-size: 15px;
+  line-height: 15px;
+  margin: 0 0 30px 0;
+  text-align: center;
+  text-decoration: none;
+}
+
+.popup-content h1 {
+  font-family: var(--handwriting);
+  text-align: center;
+}
+.popup-content .byline {
+  margin-bottom: 10px;
+  text-align: center;
+}
+.popup-content .byline a {
+  color: var(--hlcolor);
+}
 
 /* ============================================
    Debug Panel (development only)

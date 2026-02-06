@@ -1,5 +1,4 @@
 // animationUtils.js
-
 import { LinearInterpolator } from "@deck.gl/core";
 
 export class OrthographicFlyToInterpolator extends LinearInterpolator {
@@ -12,25 +11,40 @@ export class OrthographicFlyToInterpolator extends LinearInterpolator {
   interpolateProps(startProps, endProps, t) {
     // Ease in-out cubic for ultra smooth movement
     const ease = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-
     // Ease out cubic - fast start, slow end (for panning)
     const easeOut = (x) => 1 - Math.pow(1 - x, 3);
-
     // Ease in cubic - slow start, fast end (for zooming in)
     const easeIn = (x) => x * x * x;
 
     const easedT = ease(t);
 
+    // Calculate pan distance between start and end positions
+    const dx = endProps.target[0] - startProps.target[0];
+    const dy = endProps.target[1] - startProps.target[1];
+    const panDistance = Math.sqrt(dx * dx + dy * dy);
+
     let target, zoom;
 
     if (startProps.zoom >= 5 && endProps.zoom >= 5) {
       // Zoomed in on both ends: arc up (zoom out) then back down
+      // Arc height scales with pan distance only - not zoom change
       target = [
         startProps.target[0] + (endProps.target[0] - startProps.target[0]) * easedT,
         startProps.target[1] + (endProps.target[1] - startProps.target[1]) * easedT,
         0
       ];
-      const arcHeight = 1.5;
+
+      // Scale arc height based on pan distance only
+      // distance < 10: no arc (0)
+      // distance > 100: max arc (1.5)
+      const minDistance = 10;
+      const maxDistance = 100;
+      const maxArcHeight = 1.5;
+
+      const normalizedDistance = Math.max(0, Math.min(1, (panDistance - minDistance) / (maxDistance - minDistance)));
+      const arcHeight = normalizedDistance * maxArcHeight;
+
+      // Arc always zooms OUT (lower zoom value) at the midpoint
       const smoothArc = Math.sin(easedT * Math.PI) * arcHeight;
       const baseZoom = startProps.zoom + (endProps.zoom - startProps.zoom) * easedT;
       zoom = baseZoom - smoothArc;
@@ -94,7 +108,6 @@ export function createOpacityAnimator(onUpdate) {
 export function createWiggleAnimator(onUpdate) {
   let animationFrame = null;
   let startTime = null;
-
   const amplitude = 0.15;
   const rockDuration = 300;
   const pauseDuration = 800;
@@ -107,8 +120,8 @@ export function createWiggleAnimator(onUpdate) {
     function animate(currentTime) {
       const elapsed = currentTime - startTime;
       const cyclePosition = elapsed % cycleDuration;
-
       let offset = 0;
+
       if (cyclePosition < rockDuration) {
         const t = cyclePosition / rockDuration;
         offset = Math.sin(t * Math.PI) * amplitude;

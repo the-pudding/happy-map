@@ -43,7 +43,7 @@
   }
 
   .popup-content {
-    background: white;
+    background: var(--popupbg);
     color: #333;
     padding: 10px;
     border-radius: 4px;
@@ -56,12 +56,12 @@
   .popup-content::after {
     content: "";
     position: absolute;
-    bottom: -8px;
+    bottom: -7px;
     left: 50%;
     transform: translateX(-50%);
     border-width: 8px 8px 0;
     border-style: solid;
-    border-color: white transparent transparent transparent;
+    border-color: var(--popupbg) transparent transparent transparent;
   }
 
   .popup-close {

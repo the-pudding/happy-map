@@ -1,11 +1,14 @@
 <script>
-  let { deck, viewState } = $props();
+  import { onMount } from 'svelte';
+
+  let { deck, viewState, introStage } = $props();
 
   let compassContainer = $state();
   let viewportLeft = $state(20);
   let viewportTop = $state(20);
   let viewportWidth = $state(140);
   let viewportHeight = $state(140);
+  let ready = $state(false);
 
   function updateViewport() {
     if (!compassContainer || !deck) return;
@@ -38,21 +41,44 @@
         5,
         (bottomPercent - topPercent) * compassInnerSize
       );
+
+      ready = true;
     } catch (e) {
       // Deck not ready yet
     }
   }
 
-  // Update when viewState zoom or target changes
+  onMount(() => {
+    requestAnimationFrame(() => {
+      updateViewport();
+    });
+  });
+
   $effect(() => {
-    // Access specific properties to trigger reactivity
     const _ = viewState?.zoom;
     const __ = viewState?.target;
     updateViewport();
   });
+
+  $effect(() => {
+    if (deck && compassContainer) {
+      updateViewport();
+    }
+  });
+
+  // Update compass when introStage changes (button clicks)
+  $effect(() => {
+    const _ = introStage;
+    if (deck) {
+      // Small delay to let the map animation start
+      setTimeout(() => {
+        updateViewport();
+      }, 100);
+    }
+  });
 </script>
 
-<div class="compass" bind:this={compassContainer}>
+<div class="compass" class:ready bind:this={compassContainer}>
   <div
     class="viewport-box"
     style="left: {viewportLeft}px; top: {viewportTop}px; width: {viewportWidth}px; height: {viewportHeight}px;"
@@ -65,73 +91,67 @@
   <div class="compassLabel xlabel right">More agency</div>
 </div>
 
-<svg style="visibility: hidden; position: absolute;" width="0" height="0">
-  <defs>
-    <filter id="parchment-squiggle">
-      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise" />
-
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" result="distorted" />
-
-      <!-- <feGaussianBlur in="distorted" stdDeviation="0.7" /> -->
-    </filter>
-  </defs>
-</svg>
-
 <style>
   .compass {
-  position: absolute;
-  left: 10px;
-  bottom: max(10px, env(safe-area-inset-bottom, 10px));
-  width: clamp(130px, 18vw, 180px);
-  height: clamp(130px, 18vw, 180px);
-  z-index: 999;
-  font-family: var(--handwriting);
-  /* Background logic */
-  background: #274970;
-  /* box-shadow: 2px 3px 5px rgba(0,0,0,0.3); */
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    width: clamp(130px, 18vw, 180px);
+    height: clamp(130px, 18vw, 180px);
+    z-index: 999;
+    font-family: var(--handwriting);
+    background: var(--compassbg);
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 2px 2px 10px 2px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
 
-  /* SHAPE 1: The Container */
-  border-radius: 10px;
-  box-shadow: 2px 2px 10px 2px rgba(0,0,0,0.3);
-}
+  @media (max-width: 1200px) {
+    .compass {
+      left: auto;
+      bottom: auto;
+      right: 10px;
+      top: max(10px, env(safe-area-inset-top, 10px));
+    }
+  }
 
-.viewport-box {
+  .compass.ready {
+    opacity: 1;
+  }
+
+  .viewport-box {
     position: absolute;
     pointer-events: none;
     z-index: 50;
-
-    /* 1. Transparent Background */
+    max-width: 78%;
+    max-height: 78%;
     background-color: transparent;
- /* 2. The White Cross-Hatch Stack */
     background-image:
-        /* Layer 1: Thick diagonal strokes (45deg) - White/Chalk */
-        repeating-linear-gradient(
-            45deg,
-            rgba(255,255,255, 0.2) 0px,
-            rgba(255,255,255, 0.2) 2px,
-            transparent 2px,
-            transparent 8px
-        ),
-        /* Layer 2: Thinner, steeper strokes (-60deg) - White/Chalk */
-        repeating-linear-gradient(
-            -60deg,
-            rgba(255,255,255, 0.2) 0px,
-            rgba(255,255,255, 0.2) 1px,
-            transparent 1px,
-            transparent 6px
-        );
-
-
-    /* 4. Border Color (White sketch) */
-    border: 1px solid rgba(255,255,255, 0.2);
-}
+      repeating-linear-gradient(
+        45deg,
+        var(--compasscrosshatch) 0px,
+        var(--compasscrosshatch) 2px,
+        transparent 2px,
+        transparent 8px
+      ),
+      repeating-linear-gradient(
+        -60deg,
+        var(--compasscrosshatch) 0px,
+        var(--compasscrosshatch) 1px,
+        transparent 1px,
+        transparent 6px
+      );
+    border: 1px solid var(--compasscrosshatch);
+  }
 
   .yaxis {
     position: absolute;
     left: 50%;
     top: 11%;
     height: 78%;
-    border-left: 1px solid rgb(255,255,255);
+    border-left: 1px solid var(--compasstext);
     z-index: 60;
   }
 
@@ -140,7 +160,7 @@
     top: 50%;
     left: 11%;
     width: 78%;
-    border-top: 1px solid rgb(255,255,255);
+    border-top: 1px solid var(--compasstext);
     z-index: 60;
   }
 
@@ -149,7 +169,7 @@
     font-size: clamp(12px, 1.2vw, 12px);
     line-height: 1;
     font-weight: 400;
-    color: rgb(255,255,255);
+    color: var(--compasstext);
     z-index: 70;
   }
 
