@@ -775,9 +775,9 @@
   <Popup bind:popupInfo />
   <NarratorPopup bind:narratorPopupInfo />
 
-  <!-- {#if storyActiveIndex < copy.story.length - 1} -->
+  {#if introStage >= copy.story.length - 1}
     <Compass {deck} {viewState} />
-  <!-- {/if} -->
+  {/if}
 
   <div class="zoom-controls">
     <button

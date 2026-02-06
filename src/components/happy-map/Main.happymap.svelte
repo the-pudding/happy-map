@@ -159,29 +159,5 @@
     z-index: 1;
     overflow: hidden;
   }
-.filterButton.shake {
-  animation: shake 1s ease-in-out infinite, glow 1s ease-in-out infinite;
-}
 
-@keyframes shake {
-  0% {
-    transform: translateX(0) rotate(0deg);
-  }
-  50% {
-    transform: translateX(-10px) rotate(0deg);
-  }
-  100% {
-    transform: translateX(0) rotate(0deg);
-  }
-}
-@keyframes glow {
-  0%,
-  100% {
-    box-shadow: 0 0 8px rgba(87, 191, 242, 0.6), 0 0 16px rgba(87, 191, 242, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(87, 191, 242, 1), 0 0 40px rgba(87, 191, 242, 0.6),
-      0 0 60px rgba(87, 191, 242, 0.3);
-  }
-}
 </style>

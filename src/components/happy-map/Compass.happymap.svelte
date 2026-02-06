@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
 
   let { deck, viewState, introStage } = $props();
 
@@ -79,6 +79,7 @@
 </script>
 
 <div class="compass" class:ready bind:this={compassContainer}>
+  <!-- <div class="compassBackground"></div> -->
   <div
     class="viewport-box"
     style="left: {viewportLeft}px; top: {viewportTop}px; width: {viewportWidth}px; height: {viewportHeight}px;"
@@ -92,28 +93,71 @@
 </div>
 
 <style>
+  .compassBackground {
+    position: absolute;
+    left: -100%;
+    bottom: -100%;
+
+    /* 1. Set size to match the container so it's an actual rectangle shape */
+    width: 210%;
+    height: 210%;
+
+    /* 2. Use a solid semi-transparent color.
+     We don't need the gradient fading to 0% anymore,
+     because the blur filter handles the edge fade. */
+    /* background: rgba(71, 108, 149, 1); */
+    background: var(--compassbg);
+    /* 3. Create the rounded shape */
+    border-radius: 40%;
+
+    /* 4. Blur the entire element to make the edges fuzzy */
+    filter: blur(30px);
+
+    /* Optional: Because blurring shrinks the visual footprint slightly,
+     you might want to scale it up a tiny bit to compensate. */
+    transform: scale(1.1);
+
+    /* Ensure it sits behind the text/lines */
+    z-index: -1;
+  }
   .compass {
     position: absolute;
     left: 10px;
     bottom: 10px;
-    width: clamp(130px, 18vw, 180px);
-    height: clamp(130px, 18vw, 180px);
+    width: clamp(140px, 22vw, 180px);
+    height: clamp(140px, 22vw, 180px);
+    background: var(--compassbg);
+    background-image: url("assets/minimap.png");
+    background-size: 78% 78%;
+    background-position: center center;
+    background-repeat: no-repeat;
     z-index: 999;
     font-family: var(--handwriting);
-    background: var(--compassbg);
-    overflow: hidden;
-    border-radius: 10px;
-    box-shadow: 2px 2px 10px 2px rgba(0,0,0,0.3);
+    overflow: visible;
     opacity: 0;
     transition: opacity 0.3s ease;
+    border: 2px solid #000;
   }
 
   @media (max-width: 1200px) {
     .compass {
       left: auto;
       bottom: auto;
-      right: 10px;
-      top: max(10px, env(safe-area-inset-top, 10px));
+      right: 5px;
+      top: 5px;
+      /* background: radial-gradient(
+        circle at top right,
+        rgba(71, 108, 149, 1) 0%,
+        rgba(71, 108, 149, 1) 35%,
+        rgba(71, 108, 149, 0) 65%
+      ); */
+    }
+    .compassBackground {
+      position: absolute;
+      right: -100%;
+      top: -100%;
+      left: auto;
+      bottom: auto;
     }
   }
 
@@ -171,6 +215,7 @@
     font-weight: 400;
     color: var(--compasstext);
     z-index: 70;
+    text-shadow: 1px 1px 12px #fff;
   }
 
   .compassLabel.ylabel {

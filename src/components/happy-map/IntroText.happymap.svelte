@@ -41,7 +41,7 @@
       {/if}
     </div>
   </div>
-  <button class="skipBtn" onclick={() => onStep(2)}>Skip</button>
+  <button class="skipBtn" onclick={() => onStep(2)}>Skip tour</button>
 {/if}
 
 <style>

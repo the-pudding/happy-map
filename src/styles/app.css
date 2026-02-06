@@ -49,22 +49,36 @@
   --compasscrosshatch: rgba(255,255,255,0.2);
   --compasscrosstext: #fff;
  */
-  --popupbg: #ffffff;
+/*   --popupbg: #ffffff;
   --popuptext: #1e2225;
-
---buttonbg: #2c3840;
---buttonbg-hover: #3a4850;
---buttontext: #f0f2f4;
---buttonborder: 2px solid #6a7a85;
---buttonboxshadow: 0 4px 16px rgba(0, 0, 0, 0.4);
---panelhl: #9effdc;
---paneldark: #001126;
-
+  --buttonbg: #2c3840;
+  --buttonbg-hover: #3a4850;
+  --buttontext: #f0f2f4;
+  --buttonborder: 2px solid #6a7a85;
+  --buttonboxshadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --panelhl: #9effdc;
+  --paneldark: #001126;
   --crosshatch: rgba(40, 60, 70, 0.08);
   --compassbg: rgba(40, 60, 75, 0.99);
-  --compasscrosshatch: rgba(255, 255, 255, 0.25);
-  --compasstext: #ffffff;
-  /* "1" second duration */
+  --compasscrosshatch: rgba(200, 200, 200, 0.5);
+  --compasstext: #ffffff; */
+
+
+  --popupbg: #ffffff;
+  --popuptext: #1e2225;
+  --buttonbg: #fff;
+  --buttonbg-hover: #ddd;
+  --buttontext: #000;
+  --buttonborder: 1px solid #000;
+  --buttonboxshadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --panelhl: #9effdc;
+  --paneldark: #001126;
+  --crosshatch: rgba(40, 60, 70, 0.1);
+  --compassbg: #ededed;
+  --compasscrosshatch: rgba(0,0,0, 0.15);
+  --compasstext: #000;
+
+
   --1s: 1ms;
 }
 
@@ -163,15 +177,15 @@ html {
   background: var(--buttonbg-hover);
 }
 .filterButton {
-  margin-top: 20px;
-  top: clamp(130px, 18vw, 180px);
+  margin-top: 30px;
+  top: clamp(140px, 22vw, 180px);
 }
 #showinfo {
-  margin-top: 20px;
-  top: clamp(130px, 18vw, 180px);
+  margin-top: 30px;
+  top: clamp(140px, 22vw, 180px);
   right: 83px;
 }
-@media (max-width: 1200px) {
+@media (min-width: 1200px) {
   .filterButton {
     margin-top: 20px;
     top: 0;
@@ -180,6 +194,37 @@ html {
     margin-top: 20px;
     top: 0;
     right: 83px;
+  }
+}
+.filterButton.shake {
+  animation:
+    shake 1s ease-in-out infinite,
+    glow 1s ease-in-out infinite;
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(-5px) rotate(0deg);
+  }
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+}
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px rgba(87, 191, 242, 0.6),
+      0 0 16px rgba(87, 191, 242, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(87, 191, 242, 1),
+      0 0 40px rgba(87, 191, 242, 0.6),
+      0 0 60px rgba(87, 191, 242, 0.3);
   }
 }
 
