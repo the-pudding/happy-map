@@ -24,9 +24,10 @@
             popupInfo.data[6].slice(1)} /
           {popupInfo.data[7] == "y" ? "Parent" : "Not a parent"}
         </span>
-        {#if popupInfo.data._stableId !== undefined}
+       <!--  {#if popupInfo.data._stableId !== undefined}
           <br /><span class="debug-id">ID: {popupInfo.data._stableId}</span>
-        {/if}
+          <br /><span class="debug-id">Coords: {popupInfo.data[0]}, {popupInfo.data[1]}</span>
+        {/if} -->
       </div>
       <div class="quote">{popupInfo.data[2]}</div>
     </div>
@@ -95,7 +96,7 @@
     line-height: 1.3em;
     color: #000;
     /* font-family: var(--serif); */
-     font-family: var(--handwriting);
+     /* font-family: var(--handwriting); */
   }
 
   .debug-id {

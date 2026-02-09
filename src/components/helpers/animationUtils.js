@@ -1,5 +1,5 @@
 // animationUtils.js
-import { LinearInterpolator } from "@deck.gl/core";
+import { LinearInterpolator } from "@deck.gl/core"; //
 
 export class OrthographicFlyToInterpolator extends LinearInterpolator {
   constructor() {
@@ -9,12 +9,9 @@ export class OrthographicFlyToInterpolator extends LinearInterpolator {
   }
 
   interpolateProps(startProps, endProps, t) {
-    // Ease in-out cubic for ultra smooth movement
-    const ease = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-    // Ease out cubic - fast start, slow end (for panning)
-    const easeOut = (x) => 1 - Math.pow(1 - x, 3);
-    // Ease in cubic - slow start, fast end (for zooming in)
-    const easeIn = (x) => x * x * x;
+    // UPDATED: Quintic Ease-In-Out
+    // x^5 provides a much flatter start/end and steeper middle than x^3
+    const ease = (x) => x < 0.5 ? 16 * x * x * x * x * x : 1 - Math.pow(-2 * x + 2, 5) / 2;
 
     const easedT = ease(t);
 
@@ -27,7 +24,6 @@ export class OrthographicFlyToInterpolator extends LinearInterpolator {
 
     if (startProps.zoom >= 5 && endProps.zoom >= 5) {
       // Zoomed in on both ends: arc up (zoom out) then back down
-      // Arc height scales with pan distance only - not zoom change
       target = [
         startProps.target[0] + (endProps.target[0] - startProps.target[0]) * easedT,
         startProps.target[1] + (endProps.target[1] - startProps.target[1]) * easedT,
@@ -35,8 +31,6 @@ export class OrthographicFlyToInterpolator extends LinearInterpolator {
       ];
 
       // Scale arc height based on pan distance only
-      // distance < 10: no arc (0)
-      // distance > 100: max arc (1.5)
       const minDistance = 10;
       const maxDistance = 100;
       const maxArcHeight = 1.5;
@@ -48,6 +42,7 @@ export class OrthographicFlyToInterpolator extends LinearInterpolator {
       const smoothArc = Math.sin(easedT * Math.PI) * arcHeight;
       const baseZoom = startProps.zoom + (endProps.zoom - startProps.zoom) * easedT;
       zoom = baseZoom - smoothArc;
+
     } else if (endProps.zoom <= 2) {
       // Zooming out to 2 or less: pan and zoom at same rate
       target = [
@@ -56,17 +51,17 @@ export class OrthographicFlyToInterpolator extends LinearInterpolator {
         0
       ];
       zoom = startProps.zoom + (endProps.zoom - startProps.zoom) * easedT;
-    } else {
-      // Otherwise: pan fast, zoom slow
-      const panT = easeOut(t);
-      const zoomT = easeIn(t);
 
+    } else {
+      // UPDATED: General case
+      // Previously used separate easeOut/easeIn which caused abrupt starts.
+      // Now uses the strong Quintic ease for both to ensure smooth start/stop.
       target = [
-        startProps.target[0] + (endProps.target[0] - startProps.target[0]) * panT,
-        startProps.target[1] + (endProps.target[1] - startProps.target[1]) * panT,
+        startProps.target[0] + (endProps.target[0] - startProps.target[0]) * easedT,
+        startProps.target[1] + (endProps.target[1] - startProps.target[1]) * easedT,
         0
       ];
-      zoom = startProps.zoom + (endProps.zoom - startProps.zoom) * zoomT;
+      zoom = startProps.zoom + (endProps.zoom - startProps.zoom) * easedT;
     }
 
     return { target, zoom };
@@ -83,7 +78,10 @@ export function createOpacityAnimator(onUpdate) {
     function tick(currentTime) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      // Also updated to Quintic for consistency in UI feeling
+      const eased = progress < 0.5 ? 16 * progress * progress * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 5) / 2;
+
       const value = from + (to - from) * eased;
       onUpdate(value);
 

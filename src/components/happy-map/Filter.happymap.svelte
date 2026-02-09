@@ -1,11 +1,22 @@
 <script>
   let { filters = $bindable(), isOpen = $bindable() } = $props();
 
-  function toggleGroup(groupName, value) {
-  const keys = Object.keys(filters[groupName]);
-  keys.forEach((key) => (filters[groupName][key] = value));
-  filters = structuredClone(filters); // Force reactivity
-}
+  // Ensure search property exists (just in case)
+  if (typeof filters.search === "undefined") {
+    filters.search = "";
+  }
+
+  function toggleGroup(groupKey, turnOn) {
+    const newFilters = { ...filters };
+    const currentGroup = { ...newFilters[groupKey] };
+
+    Object.keys(currentGroup).forEach((key) => {
+      currentGroup[key] = turnOn;
+    });
+
+    newFilters[groupKey] = currentGroup;
+    filters = newFilters;
+  }
 
   function close() {
     isOpen = false;
@@ -16,6 +27,18 @@
   <div class="filterPanel open">
     <button class="close-panel-btn" onclick={close}>×</button>
     <h4>Filter Responses</h4>
+
+    <div class="filter-group">
+      <div class="group-header">
+        <div class="group-title">Search Text</div>
+      </div>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Type to search..."
+        bind:value={filters.search}
+      />
+    </div>
 
     <div class="filter-group">
       <div class="group-header">
@@ -117,10 +140,13 @@
         <input type="checkbox" bind:checked={filters.marital.divorced} /> Divorced
       </label>
     </div>
+
   </div>
 {/if}
 
 <style>
+  /* ... (Your existing styles) ... */
+
   .filterPanel {
     font-family: var(--sans);
     position: absolute;
@@ -246,5 +272,29 @@
     cursor: pointer;
     line-height: 1;
     padding: 0;
+  }
+
+  /* NEW: Search Input Styles */
+  .search-input {
+    width: 100%;
+    background-color: rgba(0, 36, 54, 0.5);
+    border: 1px solid #5aa6cf;
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: white;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus {
+    border-color: var(--panelhl);
+    background-color: rgba(0, 36, 54, 0.8);
+  }
+
+  .search-input::placeholder {
+    color: #5aa6cf;
+    opacity: 0.7;
   }
 </style>

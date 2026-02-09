@@ -163,6 +163,18 @@ export function getFontSize(type, currentZoom) {
   }
 
 export function matchesFilters(p, filters) {
+  // --- 1. Search Text Check (New) ---
+  if (filters.search && filters.search.trim() !== "") {
+    // Assuming text is at index 2 based on your other indices
+    const textContent = p[2];
+
+    // Check if text exists and contains the search string (case-insensitive)
+    if (!textContent || !textContent.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+  }
+
+  // --- 2. Existing Demographic Checks ---
   // console.log("Filter check:", p[3], p[4], p[5], filters.location);
   const isUS = p[4] === "USA";
   if (isUS && !filters.location.us) return false;
