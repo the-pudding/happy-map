@@ -196,14 +196,14 @@ export function matchesFilters(p, filters) {
   else if (sex === "f" && !filters.sex.f) return false;
   else if (sex !== "m" && sex !== "f" && !filters.sex.o) return false;
 
-  const isParent = p[7] === "y";
+  const isParent = p[7] === 1;
   if (isParent && !filters.parent.yes) return false;
   if (!isParent && !filters.parent.no) return false;
 
-  const marital = p[6].toLowerCase();
-  if (marital.includes("single") && !filters.marital.single) return false;
-  else if (marital.includes("married") && !filters.marital.married) return false;
-  else if (marital.includes("divorced") && !filters.marital.divorced) return false;
+  const marital = p[6];
+  if (marital.includes("s") && !filters.marital.single) return false;
+  else if (marital.includes("m") && !filters.marital.married) return false;
+  else if (marital.includes("d") && !filters.marital.divorced) return false;
 
   return true;
 }
@@ -216,7 +216,14 @@ export function getIconName(p) {
   else if (age > 40) ageGroup = "old";
   else if (age > 25) ageGroup = "mid";
   const sex = sexChar === "m" ? "male" : "female";
-  const variant = (p._stableId || 0) % 18;
+
+  // Handle string IDs like "t0", "t1" etc.
+  let id = p._stableId || 0;
+  if (typeof id === 'string') {
+    id = parseInt(id.replace(/\D/g, ''), 10) || 0;
+  }
+  const variant = id % 18;
+
   return `${ageGroup}-${sex}-${variant}`;
 }
 

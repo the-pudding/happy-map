@@ -44,10 +44,10 @@
 
     // 1. Lower Opacity Cap: prevents saturation.
     //    Range: 0.03 (for 4000 dots) to 0.4 (for 50 dots)
-    const dynamicOpacity = Math.max(0.03, Math.min(0.4, 300 / allDots.length));
+    const dynamicOpacity = Math.max(0.05, Math.min(0.15, 300 / allDots.length));
 
     // 2. Dark Ink Color: Deep blue-black works best with multiply
-    ctx.fillStyle = `rgba(60, 30, 230, ${dynamicOpacity})`;
+    ctx.fillStyle = `rgba(250, 30, 140, ${dynamicOpacity})`;
 
     // 3. Blend Mode: Multiply creates a true "ink buildup" effect
     ctx.globalCompositeOperation = 'multiply';
@@ -170,7 +170,7 @@
 
 <style>
   .compass {
-    position: absolute;
+    position: fixed;
     left: 10px;
     bottom: 10px;
     width: clamp(140px, 22vw, 180px);
@@ -188,6 +188,7 @@
     background-position: center center;
     background-repeat: no-repeat;
   }
+
 
   .density-canvas {
     position: absolute;
@@ -212,12 +213,22 @@
       repeating-linear-gradient(-60deg, var(--compasscrosshatch) 0px, var(--compasscrosshatch) 1px, transparent 1px, transparent 6px);
   }
 
+ /* Tablet / Small Laptop: Move to top-right */
   @media (max-width: 1200px) {
     .compass {
       left: auto;
       bottom: auto;
-      right: 5px;
-      top: 5px;
+      right: 15px;
+      top: 15px;
+    }
+  }
+
+  /* Mobile: Push down to clear the iOS Notch/Status Bar */
+  @media (max-width: 600px) {
+    .compass {
+      /* Use env() to detect the notch size, with a 60px fallback */
+      top: 10px;
+      right: 10px;
     }
   }
 

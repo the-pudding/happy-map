@@ -275,3 +275,26 @@ html {
   z-index: 999999999;
   min-width: 150px;
 }
+
+.desktopImage  {
+  display: block;
+}
+.mobileImage {
+  display: none;
+}
+@media (max-width: 600px) {
+.desktopImage  {
+  display: none;
+}
+.mobileImage {
+  display: block;
+}
+}
+
+.cite {
+  font-size: 11px;
+  width: 100%;
+  line-height: 12px;
+  margin-top: 10px;
+  color: #777;
+}

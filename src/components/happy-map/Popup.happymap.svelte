@@ -2,6 +2,12 @@
   import { convertCountries } from "$components/helpers/textUtils.js";
 
   let { popupInfo = $bindable() } = $props();
+  const marriedlookup = {
+    "m": "Married",
+    "s":  "Single",
+    "d": "Divorced",
+    "-": "--"
+  }
 
   function close() {
     popupInfo = null;
@@ -20,9 +26,8 @@
           popupInfo.data[4])}
         <br />
         <span>
-          {popupInfo.data[6].charAt(0).toUpperCase() +
-            popupInfo.data[6].slice(1)} /
-          {popupInfo.data[7] == "y" ? "Parent" : "Not a parent"}
+          {marriedlookup[popupInfo.data[6]]} /
+          {popupInfo.data[7] == 1 ? "Parent" : "Not a parent"}
         </span>
        <!--  {#if popupInfo.data._stableId !== undefined}
           <br /><span class="debug-id">ID: {popupInfo.data._stableId}</span>

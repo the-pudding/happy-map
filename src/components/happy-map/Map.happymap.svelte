@@ -10,7 +10,10 @@
     shuffle,
     getInitialZoom
   } from "$components/helpers/textUtils.js";
-  import { createLabelLayers, spreadDotsToGrid } from "$components/helpers/labelUtils.js";
+  import {
+    createLabelLayers,
+    spreadDotsToGrid
+  } from "$components/helpers/labelUtils.js";
   import {
     OrthographicFlyToInterpolator,
     createOpacityAnimator,
@@ -21,7 +24,6 @@
   import Compass from "$components/happy-map/Compass.happymap.svelte";
   import copy from "$data/copy.json";
 
-  // Icon Atlas
   import iconMapping from "$data/icon-mapping.json";
   const ICON_ATLAS = "assets/icon-atlas.png";
 
@@ -31,25 +33,25 @@
     introStage = $bindable(),
     storyActiveIndex = $bindable(),
     popupInfo = $bindable(),
+    isLoading = $bindable(true),
     onReady
   } = $props();
 
   let fontLoaded = $state(false);
 
-  // --- CONSTANTS ---
   const MAX_ICONS = 4000;
   const ICON_POPUP_OFFSET = 1.2;
   const NARRATOR_POPUP_OFFSET = 1.7;
   const ZOOM_STEP = 0.5;
 
   const storyTargetIds = new Set(
-    copy.story.filter((s) => s.targetId).map((s) => parseInt(s.targetId, 10))
+    copy.story.filter((s) => s.targetId).map((s) => `t${s.targetId}`)
   );
 
-  // --- STATE ---
   let canvasElement;
   let deck = null;
   let validTiles = new Set();
+  let isManifestLoaded = $state(false);
   let tileLayer = null;
   let shallowWaterLayer = null;
   let waveData = [];
@@ -58,12 +60,30 @@
   let allDots = [];
   let filteredDots = $state([]);
 
+  // Helper to calculate offset based on story type
+  const getPixelOffset = (isLongText) => {
+    if (typeof window === "undefined") return 0;
+    // Standard offset 15%, Long text offset 40%
+    return window.innerHeight * (isLongText ? -0.4 : -0.2);
+  };
+
   const getInitialViewState = () => {
     const story = copy.story?.[0];
     if (story?.lng && story?.lat && story?.zoom) {
+      const zoom = parseFloat(story.zoom);
+      let targetY = parseFloat(story.lat) * 256;
+
+      if (typeof window !== "undefined" && window.innerWidth < 600) {
+        //
+        // FIXED: Check for longtext on initial load to prevent "jump"
+        const offset = getPixelOffset(story.longtext == "1");
+        // FIXED: += moves camera DOWN, so point appears HIGHER (above text)
+        targetY += offset / Math.pow(2, zoom);
+      }
+
       return {
-        target: [parseFloat(story.lng) * 256, parseFloat(story.lat) * 256, 0],
-        zoom: parseFloat(story.zoom),
+        target: [parseFloat(story.lng) * 256, targetY, 0],
+        zoom: zoom,
         minZoom: 0,
         maxZoom: 6
       };
@@ -80,7 +100,7 @@
   let narratorShouldTransition = $state(true);
 
   let processedDots = null;
-  let processedDotsFilterKey = '';
+  let processedDotsFilterKey = "";
   let dotTransition = $state(300);
 
   const opacityAnimator = createOpacityAnimator((opacity) => {
@@ -93,7 +113,6 @@
     if (deck) renderDeck();
   });
 
-  // --- EXPORTED METHODS ---
   export function focus() {
     canvasElement?.focus();
   }
@@ -118,8 +137,12 @@
     const minDistance = 10;
     const maxDistance = 150;
 
-    const normalizedDistance = Math.max(0, Math.min(1, (totalDistance - minDistance) / (maxDistance - minDistance)));
-    const transitionDuration = minDuration + normalizedDistance * (maxDuration - minDuration);
+    const normalizedDistance = Math.max(
+      0,
+      Math.min(1, (totalDistance - minDistance) / (maxDistance - minDistance))
+    );
+    const transitionDuration =
+      minDuration + normalizedDistance * (maxDuration - minDuration);
 
     const newViewState = {
       target: [targetX, targetY, 0],
@@ -155,7 +178,11 @@
     if (!dot || !viewport) return;
 
     const narratorPos = getNarratorPosition();
-    const [nudgedX, nudgedY] = nudgeAwayFromNarrator(dot[0], dot[1], narratorPos);
+    const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
+      dot[0],
+      dot[1],
+      narratorPos
+    );
 
     const [x, y] = viewport.project([nudgedX * 256, nudgedY * 256]);
     popupInfo = {
@@ -166,7 +193,6 @@
     wiggleAnimator.start();
   }
 
-  // --- INTERNAL HELPERS ---
   const getIconSize = (zoom) => 3 + Math.pow(zoom, 2.1);
   const getWaveScale = (zoom) => 0.6 + zoom * 0.25;
 
@@ -190,7 +216,13 @@
     return null;
   }
 
-  function nudgeAwayFromNarrator(dotX, dotY, narratorPos, threshold = 0.005, nudgeAmount = 0.005) {
+  function nudgeAwayFromNarrator(
+    dotX,
+    dotY,
+    narratorPos,
+    threshold = 0.005,
+    nudgeAmount = 0.005
+  ) {
     if (!narratorPos) return [dotX, dotY];
     const dx = dotX - narratorPos.lng;
     const dy = dotY - narratorPos.lat;
@@ -205,13 +237,23 @@
 
   function handleZoomIn() {
     const newZoom = Math.min(viewState.zoom + ZOOM_STEP, viewState.maxZoom);
-    viewState = { ...viewState, zoom: newZoom, transitionDuration: 300, transitionInterpolator: new OrthographicFlyToInterpolator() };
+    viewState = {
+      ...viewState,
+      zoom: newZoom,
+      transitionDuration: 300,
+      transitionInterpolator: new OrthographicFlyToInterpolator()
+    };
     deck?.setProps({ initialViewState: viewState });
   }
 
   function handleZoomOut() {
     const newZoom = Math.max(viewState.zoom - ZOOM_STEP, viewState.minZoom);
-    viewState = { ...viewState, zoom: newZoom, transitionDuration: 300, transitionInterpolator: new OrthographicFlyToInterpolator() };
+    viewState = {
+      ...viewState,
+      zoom: newZoom,
+      transitionDuration: 300,
+      transitionInterpolator: new OrthographicFlyToInterpolator()
+    };
     deck?.setProps({ initialViewState: viewState });
   }
 
@@ -219,10 +261,12 @@
     if (processedDots && processedDots.length > 0) return processedDots;
     if (!allDots || allDots.length === 0) return [];
 
-    const mustInclude = new Set(storyTargetIds);
+    const mustInclude = storyTargetIds;
     const finalSelection = [];
     const includedIds = new Set();
+    const candidates = [];
 
+    // First pass: find ALL story targets (can't skip these)
     for (const dot of allDots) {
       if (mustInclude.has(dot._stableId)) {
         finalSelection.push(dot);
@@ -230,73 +274,81 @@
       }
     }
 
-    const candidates = [];
+    // Second pass: collect candidates until we have enough
     for (const dot of allDots) {
       if (includedIds.has(dot._stableId)) continue;
       if (matchesFilters(dot, filters)) {
         candidates.push(dot);
+        // Early exit once we have enough candidates
+        if (candidates.length >= MAX_ICONS - finalSelection.length) break;
       }
     }
 
+    // Fill remaining slots from candidates
     const remainingSlots = MAX_ICONS - finalSelection.length;
-    if (remainingSlots > 0 && candidates.length > 0) {
-      const groups = {};
-      candidates.forEach(d => {
-        const key = d.category || 'default';
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(d);
-      });
-
-      const totalCandidates = candidates.length;
-      for (const key in groups) {
-        const groupDots = groups[key];
-        const quota = Math.ceil((groupDots.length / totalCandidates) * remainingSlots);
-        let added = 0;
-        for (const dot of groupDots) {
-          if (added >= quota) break;
-          finalSelection.push(dot);
-          added++;
-        }
-      }
+    for (let i = 0; i < Math.min(remainingSlots, candidates.length); i++) {
+      finalSelection.push(candidates[i]);
     }
 
-    const dotsToRender = spreadDotsToGrid(finalSelection.slice(0, MAX_ICONS + 100));
-    processedDots = [...dotsToRender].sort((a, b) => a[1] - b[1]);
+    processedDots = spreadDotsToGrid(finalSelection);
+    processedDots.sort((a, b) => a[1] - b[1]);
     return processedDots;
   }
 
-  async function loadData() {
+  async function loadBaseMapData() {
     try {
-      const [labelsRes, dotsRes, wavesRes, tilesRes] = await Promise.all([
-        fetch("assets/labels_cleaned.json"),
-        fetch("assets/interaction.json"),
+      const [wavesRes, tilesRes] = await Promise.all([
         fetch("assets/waves.json"),
         fetch("assets/tiles/tile-manifest.txt")
       ]);
-
-      const labelsRaw = await labelsRes.json();
-      const TYPE_RANK = { l1: 1000, l2: 500, l3: 1 };
-      labelsRaw.forEach((l, i) => {
-        l._random = Math.random();
-        l._uniqueId = `lbl_${i}`;
-      });
-      allLabels = labelsRaw.sort((a, b) =>
-        (TYPE_RANK[b.type] || 0) - (TYPE_RANK[a.type] || 0) ||
-        b.priority - a.priority || b._random - a._random
-      );
-
-      const rawDots = await dotsRes.json();
-      rawDots.forEach((d, i) => (d._stableId = i));
-      allDots = shuffle(rawDots).sort((a, b) => (b.rank_score ?? -Infinity) - (a.rank_score ?? -Infinity));
-
-      processedDots = null;
-      filteredDots = getProcessedDots();
-
       waveData = await wavesRes.json();
       const tilesText = await tilesRes.text();
       validTiles = new Set(tilesText.trim().split("\n"));
+
+      isManifestLoaded = true;
+      if (deck) renderDeck();
     } catch (err) {
-      console.error("Error loading data:", err);
+      console.error("Error loading base map:", err);
+    }
+  }
+
+  async function loadInteractiveData() {
+    try {
+      const [labelsRes, targetedRes, initialRes] = await Promise.all([
+        fetch("assets/labels_cleaned.json"),
+        fetch("assets/interaction_targeted.json"),
+        fetch("assets/interaction_initial.json")
+      ]);
+
+      const labelsRaw = await labelsRes.json();
+      allLabels = labelsRaw;
+
+      // Targeted dots - use "t0", "t1", etc. as IDs
+      const targetedDots = await targetedRes.json();
+      targetedDots.forEach((d, i) => {
+        d._stableId = `t${i}`;
+      });
+
+      // Initial dots
+      const initialDots = await initialRes.json();
+      initialDots.forEach((d, i) => (d._stableId = i));
+
+      allDots = [...targetedDots, ...initialDots];
+
+      processedDots = null;
+      filteredDots = getProcessedDots();
+      if (deck) renderDeck();
+
+      // Load explore in background
+      fetch("assets/interaction_explore.json")
+        .then((res) => res.json())
+        .then((exploreDots) => {
+          const offset = initialDots.length;
+          exploreDots.forEach((d, i) => (d._stableId = offset + i));
+          allDots = [...targetedDots, ...initialDots, ...exploreDots];
+        });
+    } catch (err) {
+      console.error("Error loading interactive data:", err);
     }
   }
 
@@ -315,82 +367,122 @@
     const sortedDots = getProcessedDots();
     const selectedId = popupInfo?.data?._stableId;
     const currentStory = copy.story?.[introStage ?? 0];
-    // --- SAFE CHECK FOR TOUR END ---
-    // If we are past the end of the story, currentStory is undefined.
-    // In that case, showLabels should default to true (or whatever your preference is).
-    // Here we check if currentStory exists first.
-    const showLabels = currentStory ? (currentStory.labels != -1) : true;
+    const showLabels = currentStory ? currentStory.labels != -1 : true;
 
     const dataFilterExtension = new DataFilterExtension({ filterSize: 1 });
 
     const filterLayer = new SolidPolygonLayer({
       id: "filter-layer",
-      data: [{ polygon: [[-1e6, -1e6], [1e6, -1e6], [1e6, 1e6], [-1e6, 1e6]] }],
-      getPolygon: d => d.polygon,
-      getFillColor: [38, 22, 2, 30],
-      stroked: false, pickable: false, material: false
+      data: [
+        {
+          polygon: [
+            [-1e6, -1e6],
+            [1e6, -1e6],
+            [1e6, 1e6],
+            [-1e6, 1e6]
+          ]
+        }
+      ],
+      getPolygon: (d) => d.polygon,
+      getFillColor: [38, 22, 2, 0],
+      stroked: false,
+      pickable: false,
+      material: false
     });
 
-    const iconLayer = new IconLayer({
-      id: "dots",
-      data: sortedDots,
-      iconAtlas: ICON_ATLAS,
-      iconMapping: iconMapping,
-      getPosition: (d) => {
-        const narratorPos = getNarratorPosition();
-        const [nudgedX, nudgedY] = nudgeAwayFromNarrator(d[0], d[1], narratorPos);
-        const baseX = nudgedX * 256;
-        const baseY = nudgedY * 256;
-        if (selectedId !== undefined && d._stableId === selectedId) {
-          return [baseX + wiggleOffset, baseY];
+    let iconLayer = null;
+    if (sortedDots && sortedDots.length > 0) {
+      iconLayer = new IconLayer({
+        id: "dots",
+        data: sortedDots,
+        iconAtlas: ICON_ATLAS,
+        iconMapping: iconMapping,
+        getPosition: (d) => {
+          const narratorPos = getNarratorPosition();
+          const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
+            d[0],
+            d[1],
+            narratorPos
+          );
+          const baseX = nudgedX * 256;
+          const baseY = nudgedY * 256;
+          if (selectedId !== undefined && d._stableId === selectedId) {
+            return [baseX + wiggleOffset, baseY];
+          }
+          return [baseX, baseY];
+        },
+        getIcon: (d) => {
+          const iconName = getIconName(d);
+          return iconName;
+        },
+        getSize: () => getIconSize(viewState.zoom) * 1.5,
+        sizeScale: 1,
+        sizeUnits: "pixels",
+        pickable: true,
+        alphaCutoff: 0,
+        billboard: true,
+        parameters: { depthTest: false },
+        transitions: { getPosition: dotTransition },
+        getFilterValue: (d) => {
+          // Always show story targets
+          if (storyTargetIds.has(d._stableId)) {
+            return 1;
+          }
+
+          if (storyActiveIndex >= 0) {
+            if (d._stableId === storyActiveIndex) return 1;
+          }
+          return matchesFilters(d, filters) ? 1 : 0;
+        },
+        filterRange: [1, 1],
+        extensions: [dataFilterExtension],
+        updateTriggers: {
+          getPosition: [
+            wiggleOffset,
+            selectedId,
+            introStage,
+            narratorIcons.length
+          ],
+          getSize: [viewState.zoom],
+          getFilterValue: [JSON.stringify(filters), storyActiveIndex]
+        },
+        onClick: ({ object }) => {
+          if (!object) return;
+          const viewport = deck.getViewports()[0];
+          if (!viewport) return;
+          const narratorPos = getNarratorPosition();
+          const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
+            object[0],
+            object[1],
+            narratorPos
+          );
+          const [x, y] = viewport.project([nudgedX * 256, nudgedY * 256]);
+          popupInfo = {
+            x,
+            y: y - getIconSize(viewState.zoom) * ICON_POPUP_OFFSET,
+            data: object,
+            nudgedPosition: [nudgedX, nudgedY]
+          };
+          wiggleAnimator.start();
         }
-        return [baseX, baseY];
-      },
-      getIcon: (d) => getIconName(d),
-      getSize: () => getIconSize(viewState.zoom) * 1.5,
-      sizeScale: 1, sizeUnits: "pixels", pickable: true, alphaCutoff: 0, billboard: true,
-      parameters: { depthTest: false },
-      transitions: { getPosition: dotTransition },
-      getFilterValue: (d) => {
-        if (storyActiveIndex >= 0) {
-          if (d._stableId === storyActiveIndex) return 1;
-          if (storyTargetIds.has(d._stableId)) return 1;
-        }
-        return matchesFilters(d, filters) ? 1 : 0;
-      },
-      filterRange: [1, 1],
-      extensions: [dataFilterExtension],
-      updateTriggers: {
-        getPosition: [wiggleOffset, selectedId, introStage, narratorIcons.length],
-        getSize: [viewState.zoom],
-        getFilterValue: [JSON.stringify(filters), storyActiveIndex]
-      },
-      onClick: ({ object }) => {
-        if (!object) return;
-        const viewport = deck.getViewports()[0];
-        if (!viewport) return;
-        const narratorPos = getNarratorPosition();
-        const [nudgedX, nudgedY] = nudgeAwayFromNarrator(object[0], object[1], narratorPos);
-        const [x, y] = viewport.project([nudgedX * 256, nudgedY * 256]);
-        popupInfo = {
-          x,
-          y: y - getIconSize(viewState.zoom) * ICON_POPUP_OFFSET,
-          data: object,
-          nudgedPosition: [nudgedX, nudgedY]
-        };
-        wiggleAnimator.start();
-      }
-    });
+      });
+    }
 
     const waveLayer = new IconLayer({
       id: "waves",
       data: waveData,
       getPosition: (d) => [d.x, d.y],
-      getIcon: (d) => ({ url: `assets/wave${d.waveType}.svg`, width: 600, height: 150 }),
+      getIcon: (d) => ({
+        url: `assets/wave${d.waveType}.svg`,
+        width: 600,
+        height: 150
+      }),
       getSize: () => getWaveScale(viewState.zoom) * 20,
       getAngle: (d) => 180 + d.rotation * (180 / Math.PI),
       getColor: (d) => [0, 0, 0, Math.floor(d.opacity * 400)],
-      sizeScale: window.devicePixelRatio || 1, sizeUnits: "pixels", billboard: false,
+      sizeScale: window.devicePixelRatio || 1,
+      sizeUnits: "pixels",
+      billboard: false,
       updateTriggers: { getSize: [viewState.zoom] }
     });
 
@@ -398,22 +490,34 @@
       id: "narrator",
       data: narratorIcons,
       getPosition: (d) => [parseFloat(d.lng) * 256, parseFloat(d.lat) * 256],
-      getIcon: () => ({ url: "assets/icons/narrator.png", width: 128, height: 128, anchorY: 128 }),
+      getIcon: (d) => ({
+        url: `assets/icons/narrator_${d.icon || "front"}.png`,
+        width: 128,
+        height: 128,
+        anchorY: 128
+      }),
       getSize: () => getIconSize(viewState.zoom) * 2,
       getColor: (d) => [255, 255, 255, Math.floor(d.opacity * 255)],
-      sizeScale: 1, sizeUnits: "pixels", pickable: true, billboard: true,
+      sizeScale: 1,
+      sizeUnits: "pixels",
+      pickable: true,
+      billboard: true,
       parameters: { depthTest: false },
       transitions: narratorShouldTransition ? { getPosition: 400 } : undefined,
       updateTriggers: {
         getSize: [viewState.zoom],
-        getColor: [narratorIcons.map(n => n.opacity).join(',')],
-        getPosition: [narratorIcons.map(n => `${n.lng},${n.lat}`).join(';')]
+        getColor: [narratorIcons.map((n) => n.opacity).join(",")],
+        getPosition: [narratorIcons.map((n) => `${n.lng},${n.lat}`).join(";")],
+        getIcon: [introStage]
       },
       onClick: ({ object }) => {
         if (!object || object.opacity < 1) return;
         const viewport = deck.getViewports()[0];
         if (!viewport) return;
-        const [x, y] = viewport.project([parseFloat(object.lng) * 256, parseFloat(object.lat) * 256]);
+        const [x, y] = viewport.project([
+          parseFloat(object.lng) * 256,
+          parseFloat(object.lat) * 256
+        ]);
         narratorPopupInfo = {
           x,
           y: y - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET,
@@ -422,14 +526,51 @@
       }
     });
 
+    if (isManifestLoaded) {
+      tileLayer = new TileLayer({
+        id: "tiles",
+        minZoom: 0,
+        maxZoom: 6,
+        tileSize: 256,
+        extent: [0, 0, 256, 256],
+        refinementStrategy: "best-available",
+        maxRequests: 4,
+        updateTriggers: {
+          getTileData: [validTiles.size]
+        },
+        getTileData: async ({ index: { x, y, z } }) => {
+          const key = `${z}/${x}/${y}`;
+          if (!validTiles.has(key)) return null;
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = `assets/tiles/${z}/${x}/${y}.png`;
+          });
+        },
+        renderSubLayers: ({ id, data, tile }) => {
+          if (!data) return null;
+          const { left, top, right, bottom } = tile.bbox;
+          return new BitmapLayer({
+            id,
+            image: data,
+            bounds: [left, bottom, right, top]
+          });
+        }
+      });
+    }
+
     const layers = [
       waveLayer,
       shallowWaterLayer,
       tileLayer,
-      filterLayer,
+      // filterLayer,
       iconLayer,
       narratorLayer,
-      ...(showLabels ? createLabelLayers(allLabels, viewState.zoom, fontLoaded) : [])
+      ...(showLabels
+        ? createLabelLayers(allLabels, viewState.zoom, fontLoaded)
+        : [])
     ].filter(Boolean);
 
     deck.setProps({ layers });
@@ -437,15 +578,22 @@
 
   $effect(() => {
     const newFilterKey = JSON.stringify(filters);
-    if (newFilterKey !== processedDotsFilterKey || (!processedDots && allDots.length > 0)) {
+
+    // Check if we need to update based on filters or initial load
+    if (
+      newFilterKey !== processedDotsFilterKey ||
+      (!processedDots && allDots.length > 0)
+    ) {
+      // FIXED: Always set transition to 0 when filters change so icons snap instantly
       dotTransition = 0;
       processedDotsFilterKey = newFilterKey;
       processedDots = null;
       filteredDots = getProcessedDots();
       if (deck) renderDeck();
+
+      // Restore transition after a moment
       setTimeout(() => {
         dotTransition = 300;
-        if (deck) renderDeck();
       }, 300);
     }
     storyActiveIndex;
@@ -454,16 +602,36 @@
   });
 
   onMount(async () => {
-    await loadData();
-    document.fonts.load('400 16px "Patrick Hand SC"').then(() => {
-      fontLoaded = true;
-      if (deck) renderDeck();
-    });
-
-    if (!canvasElement.offsetWidth) {
+    // 1. Setup Canvas immediately
+    if (canvasElement && !canvasElement.offsetWidth) {
       canvasElement.style.width = "100%";
       canvasElement.style.height = "100%";
     }
+
+    // 2. Preload Atlas
+    const img = new Image();
+    img.src = ICON_ATLAS;
+
+    // 3. Start Data Loading (Non-Blocking)
+    // We start these promises now, but we don't 'await' them before creating Deck.
+    const fontPromise = document.fonts
+      .load('400 16px "Patrick Hand SC"')
+      .then(() => {
+        fontLoaded = true;
+      });
+
+    const loadingPromise = Promise.all([
+      loadBaseMapData(),
+      loadInteractiveData(),
+      fontPromise
+    ]);
+
+    // When everything is ready, turn off the loader
+    loadingPromise.then(() => {
+      isLoading = false;
+      // Force a final render to be safe
+      if (deck) renderDeck();
+    });
 
     const isStoryStart = (introStage ?? 0) === 0;
     if (!isStoryStart || !copy.story?.[0]?.zoom) {
@@ -478,35 +646,16 @@
       parameters: { blendFunc: [770, 1], blendEquation: 32774 }
     });
 
-    tileLayer = new TileLayer({
-      id: "tiles",
-      minZoom: 0, maxZoom: 6, tileSize: 256, extent: [0, 0, 256, 256], refinementStrategy: "best-available",
-      getTileData: async ({ index: { x, y, z } }) => {
-        const key = `${z}/${x}/${y}`;
-        if (!validTiles.has(key)) return null;
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => resolve(img);
-          img.onerror = () => resolve(null);
-          img.src = `assets/tiles/${z}/${x}/${y}.png`;
-        });
-      },
-      renderSubLayers: ({ id, data, tile }) => {
-        if (!data) return null;
-        const { left, top, right, bottom } = tile.bbox;
-        return new BitmapLayer({ id, image: data, bounds: [left, bottom, right, top] });
-      }
-    });
-
     deck = new Deck({
       canvas: canvasElement,
-      width: "100%", height: "100%",
+      width: "100%",
+      height: "100%",
       initialViewState: viewState,
-      controller: { doubleClickZoom: true, keyboard: { moveSpeed: -50 } },
+      controller: { doubleClickZoom: false, keyboard: { moveSpeed: -50 } },
       views: new OrthographicView({ id: "ortho" }),
       pickingRadius: 15,
-      getCursor: ({ isDragging, isHovering }) => isDragging ? "grabbing" : isHovering ? "pointer" : "grab",
+      getCursor: ({ isDragging, isHovering }) =>
+        isDragging ? "grabbing" : isHovering ? "pointer" : "grab",
       onViewStateChange: ({ viewState: newViewState, interactionState }) => {
         viewState = newViewState;
         if (interactionState?.isDragging) {
@@ -520,7 +669,11 @@
         if (!viewport) return;
         if (popupInfo?.data) {
           const narratorPos = getNarratorPosition();
-          const [nudgedX, nudgedY] = nudgeAwayFromNarrator(popupInfo.data[0], popupInfo.data[1], narratorPos);
+          const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
+            popupInfo.data[0],
+            popupInfo.data[1],
+            narratorPos
+          );
           const [newX, newY] = viewport.project([nudgedX * 256, nudgedY * 256]);
           const y = newY - getIconSize(viewState.zoom) * ICON_POPUP_OFFSET;
           if (popupInfo.x !== newX || popupInfo.y !== y) {
@@ -530,8 +683,12 @@
         if (narratorPopupInfo) {
           const currentStory = copy.story?.[introStage ?? 0];
           if (currentStory?.lng && currentStory?.lat) {
-            const [newX, newY] = viewport.project([parseFloat(currentStory.lng) * 256, parseFloat(currentStory.lat) * 256]);
-            const y = newY - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET;
+            const [newX, newY] = viewport.project([
+              parseFloat(currentStory.lng) * 256,
+              parseFloat(currentStory.lat) * 256
+            ]);
+            const y =
+              newY - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET;
             if (narratorPopupInfo.x !== newX || narratorPopupInfo.y !== y) {
               narratorPopupInfo = { ...narratorPopupInfo, x: newX, y };
             }
@@ -543,7 +700,11 @@
           const viewport = deck.getViewports()[0];
           if (!viewport) return;
           const narratorPos = getNarratorPosition();
-          const [nudgedX, nudgedY] = nudgeAwayFromNarrator(object[0], object[1], narratorPos);
+          const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
+            object[0],
+            object[1],
+            narratorPos
+          );
           const [x, y] = viewport.project([nudgedX * 256, nudgedY * 256]);
           popupInfo = {
             x,
@@ -561,6 +722,15 @@
         onReady?.();
       }
     });
+
+    const safetyTimer = setTimeout(() => {
+      if (isLoading) {
+        console.warn("Forcing display.");
+        isLoading = false;
+      }
+    }, 8000);
+
+    return () => clearTimeout(safetyTimer);
   });
 
   onDestroy(() => {
@@ -576,39 +746,45 @@
   $effect(() => {
     const currentStage = introStage ?? 0;
 
-    // --- NEW: CHECK FOR TOUR END ---
     if (currentStage >= copy.story.length) {
-      // Fade out narrator if it exists
       if (narratorIcons.length > 0) {
         narratorPopupInfo = null;
         narratorShouldTransition = true;
-        // Fade out
         const fadeOut = setInterval(() => {
-           if (narratorIcons.length === 0) { clearInterval(fadeOut); return; }
-           const newOpacity = narratorIcons[0].opacity - 0.1;
-           if (newOpacity <= 0) {
-             narratorIcons = [];
-             activeNarratorId = null;
-             clearInterval(fadeOut);
-             if (deck) renderDeck();
-           } else {
-             narratorIcons = [{ ...narratorIcons[0], opacity: newOpacity }];
-             if (deck) renderDeck();
-           }
+          if (narratorIcons.length === 0) {
+            clearInterval(fadeOut);
+            return;
+          }
+          const newOpacity = narratorIcons[0].opacity - 0.1;
+          if (newOpacity <= 0) {
+            narratorIcons = [];
+            activeNarratorId = null;
+            clearInterval(fadeOut);
+            if (deck) renderDeck();
+          } else {
+            narratorIcons = [{ ...narratorIcons[0], opacity: newOpacity }];
+            if (deck) renderDeck();
+          }
         }, 30);
       }
-      return; // Stop processing story logic
+      return;
     }
-    // -------------------------------
 
     const currentStory = copy.story[currentStage];
 
+    // FIXED: Consolidate offset calculation to a single source of truth
+    const pixelOffset = getPixelOffset(currentStory.longtext == "1");
+
     if (currentStage !== prevIntroStage) {
       const hasTargetId = currentStory?.targetId;
-      const showNarrator = !hasTargetId && currentStory?.lng && currentStory?.lat;
+      const showNarrator =
+        !hasTargetId && currentStory?.lng && currentStory?.lat;
 
-      const newPosition = showNarrator ? { lng: currentStory.lng, lat: currentStory.lat } : null;
-      const positionChanged = !newPosition ||
+      const newPosition = showNarrator
+        ? { lng: currentStory.lng, lat: currentStory.lat }
+        : null;
+      const positionChanged =
+        !newPosition ||
         prevNarratorPosition.lng !== newPosition?.lng ||
         prevNarratorPosition.lat !== newPosition?.lat;
       const wasShowingNarrator = narratorIcons.length > 0;
@@ -618,31 +794,81 @@
       if (hasTargetId) {
         const targetId = parseInt(currentStory.targetId, 10);
         const dots = getProcessedDots();
-        const dot = dots.find((d) => d._stableId === targetId);
+        // NOTE: Ensure your JSON splitting logic aligns IDs correctly here.
+        // Assuming 't' + targetId aligns with your data logic.
+        const dot = allDots.find((d) => d._stableId === `t${targetId}`);
+
         if (dot && deck) {
           const targetX = dot[0] * 256;
-          const targetY = dot[1] * 256;
-          const zoom = currentStory.zoom ? parseFloat(currentStory.zoom) : viewState.zoom;
+          let targetY = dot[1] * 256;
+          const zoom = currentStory.zoom
+            ? parseFloat(currentStory.zoom)
+            : viewState.zoom;
+
+          if (window.innerWidth < 600) {
+            // FIXED: Use += to move camera DOWN (so point is HIGHER)
+            targetY += pixelOffset / Math.pow(2, zoom);
+          }
+
           flyTo(targetX, targetY, zoom);
+
+          // Show popup after fly animation completes
+          setTimeout(() => {
+            if (deck && introStage === currentStage) {
+              const viewport = deck.getViewports()[0];
+              if (viewport && dot) {
+                const narratorPos = getNarratorPosition();
+                const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
+                  dot[0],
+                  dot[1],
+                  narratorPos
+                );
+                const [x, y] = viewport.project([nudgedX * 256, nudgedY * 256]);
+                popupInfo = {
+                  x,
+                  y: y - getIconSize(viewState.zoom) * ICON_POPUP_OFFSET,
+                  data: dot
+                };
+                wiggleAnimator.start();
+              }
+            }
+          }, 0); // Wait for fly animation (1s)
         }
-      } else if (currentStory?.lng && currentStory?.lat && currentStory?.zoom && deck) {
+      } else if (
+        currentStory?.lng &&
+        currentStory?.lat &&
+        currentStory?.zoom &&
+        deck
+      ) {
         const targetX = parseFloat(currentStory.lng) * 256;
-        const targetY = parseFloat(currentStory.lat) * 256;
+        let targetY = parseFloat(currentStory.lat) * 256;
         const zoom = parseFloat(currentStory.zoom);
+
+        if (window.innerWidth < 600) {
+          // FIXED: Use += to move camera DOWN (so point is HIGHER)
+          targetY += pixelOffset / Math.pow(2, zoom);
+        }
+
         flyTo(targetX, targetY, zoom);
       }
+
+      const storyIcon = currentStory.icon || "front";
 
       if (showNarrator) {
         const newText = currentStory.text;
         const LARGE_MOVE_THRESHOLD = 0.01;
         let distanceMoved = 0;
-        if (prevNarratorPosition.lng !== null && prevNarratorPosition.lat !== null) {
+        if (
+          prevNarratorPosition.lng !== null &&
+          prevNarratorPosition.lat !== null
+        ) {
           const dx = parseFloat(currentStory.lng) - prevNarratorPosition.lng;
           const dy = parseFloat(currentStory.lat) - prevNarratorPosition.lat;
           distanceMoved = Math.sqrt(dx * dx + dy * dy);
         }
 
-        const isLargeMove = distanceMoved > LARGE_MOVE_THRESHOLD || !wasShowingNarrator;
+        const isLargeMove =
+          distanceMoved > LARGE_MOVE_THRESHOLD || !wasShowingNarrator;
 
         if (isLargeMove && wasShowingNarrator) {
           narratorShouldTransition = false;
@@ -651,7 +877,16 @@
             opacity -= 0.1;
             if (opacity <= 0) {
               clearInterval(fadeOutInterval);
-              narratorIcons = [{ id: 0, lng: currentStory.lng, lat: currentStory.lat, opacity: 0, text: newText }];
+              narratorIcons = [
+                {
+                  id: 0,
+                  lng: currentStory.lng,
+                  lat: currentStory.lat,
+                  opacity: 0,
+                  text: newText,
+                  icon: storyIcon
+                }
+              ];
               activeNarratorId = 0;
               if (deck) renderDeck();
 
@@ -660,11 +895,17 @@
                 fadeInOpacity += 0.1;
                 if (fadeInOpacity >= 1) {
                   clearInterval(fadeInInterval);
-                  narratorIcons = narratorIcons.map(n => ({ ...n, opacity: 1 }));
+                  narratorIcons = narratorIcons.map((n) => ({
+                    ...n,
+                    opacity: 1
+                  }));
                   narratorShouldTransition = true;
                   if (deck) renderDeck();
                 } else {
-                  narratorIcons = narratorIcons.map(n => ({ ...n, opacity: fadeInOpacity }));
+                  narratorIcons = narratorIcons.map((n) => ({
+                    ...n,
+                    opacity: fadeInOpacity
+                  }));
                   if (deck) renderDeck();
                 }
               }, 30);
@@ -673,32 +914,48 @@
                 if (deck && introStage === currentStage) {
                   const viewport = deck.getViewports()[0];
                   if (viewport) {
-                    const [x, y] = viewport.project([parseFloat(currentStory.lng) * 256, parseFloat(currentStory.lat) * 256]);
+                    const [x, y] = viewport.project([
+                      parseFloat(currentStory.lng) * 256,
+                      parseFloat(currentStory.lat) * 256
+                    ]);
                     narratorPopupInfo = {
-                      x, y: y - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET, text: newText
+                      x,
+                      y:
+                        y -
+                        getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET,
+                      text: newText
                     };
                   }
                 }
               }, 350);
             } else {
-              narratorIcons = narratorIcons.map(n => ({ ...n, opacity }));
+              narratorIcons = narratorIcons.map((n) => ({ ...n, opacity }));
               if (deck) renderDeck();
             }
           }, 30);
         } else if (isLargeMove && !wasShowingNarrator) {
           narratorShouldTransition = false;
-          narratorIcons = [{ id: 0, lng: currentStory.lng, lat: currentStory.lat, opacity: 0, text: newText }];
+          narratorIcons = [
+            {
+              id: 0,
+              lng: currentStory.lng,
+              lat: currentStory.lat,
+              opacity: 0,
+              text: newText,
+              icon: storyIcon
+            }
+          ];
           activeNarratorId = 0;
           let opacity = 0;
           const fadeInterval = setInterval(() => {
             opacity += 0.1;
             if (opacity >= 1) {
               clearInterval(fadeInterval);
-              narratorIcons = narratorIcons.map(n => ({ ...n, opacity: 1 }));
+              narratorIcons = narratorIcons.map((n) => ({ ...n, opacity: 1 }));
               narratorShouldTransition = true;
               if (deck) renderDeck();
             } else {
-              narratorIcons = narratorIcons.map(n => ({ ...n, opacity }));
+              narratorIcons = narratorIcons.map((n) => ({ ...n, opacity }));
               if (deck) renderDeck();
             }
           }, 30);
@@ -707,30 +964,57 @@
             if (deck && introStage === currentStage) {
               const viewport = deck.getViewports()[0];
               if (viewport) {
-                const [x, y] = viewport.project([parseFloat(currentStory.lng) * 256, parseFloat(currentStory.lat) * 256]);
+                const [x, y] = viewport.project([
+                  parseFloat(currentStory.lng) * 256,
+                  parseFloat(currentStory.lat) * 256
+                ]);
                 narratorPopupInfo = {
-                  x, y: y - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET, text: newText
+                  x,
+                  y: y - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET,
+                  text: newText
                 };
               }
             }
           }, 350);
         } else {
           narratorShouldTransition = true;
-          narratorIcons = [{ id: 0, lng: currentStory.lng, lat: currentStory.lat, opacity: 1, text: newText }];
+          narratorIcons = [
+            {
+              id: 0,
+              lng: currentStory.lng,
+              lat: currentStory.lat,
+              opacity: 1,
+              text: newText,
+              icon: storyIcon
+            }
+          ];
           activeNarratorId = 0;
+
+          if (deck) renderDeck();
+
           setTimeout(() => {
             if (deck && introStage === currentStage) {
               const viewport = deck.getViewports()[0];
               if (viewport) {
-                const [x, y] = viewport.project([parseFloat(currentStory.lng) * 256, parseFloat(currentStory.lat) * 256]);
+                const [x, y] = viewport.project([
+                  parseFloat(currentStory.lng) * 256,
+                  parseFloat(currentStory.lat) * 256
+                ]);
                 narratorPopupInfo = {
-                  x, y: y - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET, text: newText
+                  x,
+                  y: y - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET,
+                  text: newText
                 };
               }
             }
           }, 100);
         }
         prevNarratorPosition = { lng: currentStory.lng, lat: currentStory.lat };
+      } else {
+        if (narratorIcons.length > 0) {
+          narratorIcons = [{ ...narratorIcons[0], icon: storyIcon }];
+          if (deck) renderDeck();
+        }
       }
       prevIntroStage = currentStage;
     }
@@ -739,30 +1023,83 @@
 
 <div class="map-container">
   <canvas bind:this={canvasElement} class="deck-canvas" tabindex="0"></canvas>
+
   <Popup bind:popupInfo />
   <NarratorPopup bind:narratorPopupInfo />
 
   {#if introStage >= copy.story.length - 1 || copy.story[introStage].compass == 1}
     <Compass {deck} {viewState} allDots={filteredDots} />
-  {/if}
 
-  <div class="zoom-controls">
-    <button class="zoom-btn" onclick={handleZoomIn} disabled={viewState.zoom >= viewState.maxZoom} aria-label="Zoom in">+</button>
-    <button class="zoom-btn" onclick={handleZoomOut} disabled={viewState.zoom <= viewState.minZoom} aria-label="Zoom out">−</button>
-  </div>
+    <div class="zoom-controls">
+      <button
+        class="zoom-btn"
+        onclick={handleZoomIn}
+        disabled={viewState.zoom >= viewState.maxZoom}
+        aria-label="Zoom in"
+      >
+        +
+      </button>
+      <button
+        class="zoom-btn"
+        onclick={handleZoomOut}
+        disabled={viewState.zoom <= viewState.minZoom}
+        aria-label="Zoom out"
+      >
+        −
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
-  .map-container { position: absolute; inset: 0; }
-  .deck-canvas { width: 100%; height: 100%; display: block; outline: none; }
-  .zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 4px; }
+  .map-container {
+    position: absolute;
+    inset: 0;
+  }
+
+  .deck-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+  }
+
+  .zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .zoom-btn {
-    width: 36px; height: 36px; border: none; border-radius: 4px; background: white;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); font-size: 20px; font-weight: 500;
-    color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 20px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: background-color 0.15s ease;
   }
-  .zoom-btn:hover:not(:disabled) { background: #f0f0f0; }
-  .zoom-btn:active:not(:disabled) { background: #e0e0e0; }
-  .zoom-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .zoom-btn:hover:not(:disabled) {
+    background: #f0f0f0;
+  }
+
+  .zoom-btn:active:not(:disabled) {
+    background: #e0e0e0;
+  }
+
+  .zoom-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 </style>

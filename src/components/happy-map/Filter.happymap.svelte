@@ -18,6 +18,10 @@
     filters = newFilters;
   }
 
+  function clearSearch() {
+    filters.search = "";
+  }
+
   function close() {
     isOpen = false;
   }
@@ -32,12 +36,18 @@
       <div class="group-header">
         <div class="group-title">Search Text</div>
       </div>
-      <input
-        type="text"
-        class="search-input"
-        placeholder="Type to search..."
-        bind:value={filters.search}
-      />
+      <div class="search-wrapper">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Type to search..."
+          bind:value={filters.search}
+        />
+        {#if filters.search && filters.search.length > 0}
+          <button class="clear-search-btn" onclick={clearSearch} aria-label="Clear search">×</button>
+        {/if}
+      </div>
+
     </div>
 
     <div class="filter-group">
@@ -274,13 +284,18 @@
     padding: 0;
   }
 
-  /* NEW: Search Input Styles */
+  .search-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
   .search-input {
     width: 100%;
     background-color: rgba(0, 36, 54, 0.5);
     border: 1px solid #5aa6cf;
     border-radius: 4px;
     padding: 8px 10px;
+    padding-right: 30px; /* NEW: Add space for the X button */
     color: white;
     font-size: 13px;
     font-family: inherit;
@@ -297,4 +312,25 @@
     color: #5aa6cf;
     opacity: 0.7;
   }
+
+  /* NEW: Clear Button Styles */
+  .clear-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #5aa6cf;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s;
+  }
+
+  .clear-search-btn:hover {
+    color: white;
+  }
+
 </style>
