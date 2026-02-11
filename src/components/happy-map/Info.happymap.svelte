@@ -1,9 +1,7 @@
 <script>
   import Text from "$components/happy-map/Text.happymap.svelte";
   import copy from "$data/copy.json";
-
   let { isOpen = $bindable() } = $props();
-
   function close() {
     isOpen = false;
   }
@@ -11,12 +9,14 @@
 
 {#if isOpen}
   <div class="infoPanel">
-    <button class="close-panel-btn" onclick={close}>×</button>
-    <h1>happy map</h1>
-    <div class="byline">
-      by <a href="https://pudding.cool/author/alvin-chang/" target="_blank">alvin chang</a>
+    <div class="panel-header">
+      <button class="close-panel-btn" onclick={close}>×</button>
+      <h1>happy map</h1>
+      <div class="byline">
+        by <a href="https://pudding.cool/author/alvin-chang/" target="_blank">alvin chang</a>
+      </div>
     </div>
-    <div class="info-content">
+    <div class="panel-content">
       <Text copy={copy.info} />
     </div>
   </div>
@@ -30,29 +30,53 @@
     top: 0;
     height: 100vh;
     width: 350px;
-    padding: 60px 25px 25px;
     background: var(--paneldark);
     color: white;
     z-index: 99999;
     border-left: 1px solid #264a5c;
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-header {
+    position: sticky;
+    top: 0;
+    background: var(--paneldark);
+    padding: 25px;
+    padding-top: 45px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .panel-content {
+    flex: 1;
     overflow-y: auto;
+    padding: 0 25px 25px;
+    padding-bottom: 150px;
+  }
+
+  @media (max-width: 800px) {
+    .infoPanel {
+      width: 300px;
+    }
+
+    .panel-content {
+      padding-bottom: 250px;
+    }
   }
 
   .infoPanel h1 {
     font-size: 22px;
-    /* color: #ffec70; */
     margin: 0 0 10px 0;
     line-height: 1;
-    /* font-family: var(--sans); */
     font-weight: 300;
     font-family: var(--handwriting);
   }
 
   .infoPanel .byline {
     font-size: 13px;
-    /* color: #8db1b3; */
-    margin-bottom: 25px;
+    margin-bottom: 0;
     border-bottom: 0.5px solid var(--panelline);
     padding-bottom: 15px;
   }
@@ -84,17 +108,6 @@
     color: #fff;
     margin-bottom: 15px;
   }
-
-/*   .infoPanel :global(p span) {
-    color: #ffec70;
-    font-weight: bold;
-  } */
-
-/*   .infoPanel :global(.cite) {
-    font-size: 12px;
-    color: #8db1b3;
-    font-style: italic;
-  } */
 
   .infoPanel :global(.links) {
     font-size: 12px;

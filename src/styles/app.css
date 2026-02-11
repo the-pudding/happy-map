@@ -85,6 +85,8 @@
   --compassbg: #ededed;
   --compasscrosshatch: rgba(0,0,0, 0.08);
   --compasstext: #000;
+  --viewportbox: rgb(255, 20, 142);
+  --compassdensity:  purple;
 
 
   --1s: 1ms;
@@ -305,4 +307,20 @@ html {
   line-height: 12px;
   margin-top: 10px;
   color: #777;
+}
+
+.youare {
+  display:  inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--viewportbox);
+  margin-right: 2px;
+}
+.everyone {
+  display:  inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--compassdensity);
+  opacity: 0.5;
 }

@@ -74,7 +74,7 @@
     const baseOpacity = Math.max(0.05, Math.min(0.15, 300 / allDots.length));
     const adjustedOpacity = Math.min(0.4, baseOpacity * Math.sqrt(sampleRatio));
 
-    ctx.fillStyle = `rgba(250, 30, 140, ${adjustedOpacity})`;
+    ctx.fillStyle = `rgba(200, 30, 200, ${adjustedOpacity})`;
     ctx.globalCompositeOperation = 'multiply';
 
     // Slightly larger radius to compensate for fewer dots
@@ -251,7 +251,7 @@
     pointer-events: none;
     z-index: 50;
     background-color: transparent;
-    border: 1px solid #000;
+    border: 2px solid var(--viewportbox);
     box-shadow: 0 0 0 1px rgba(255,255,255,0.5);
 
     background-image:
@@ -301,8 +301,8 @@
     text-shadow: 1px 1px 12px #fff;
   }
 
-  .compassLabel.ylabel { width: 100%; text-align: center; }
-  .compassLabel.xlabel { bottom: calc(50% + 3px); text-align: center; max-width: 45%; }
+  .compassLabel.ylabel { width: 100%; text-align: center; font-weight:600;}
+  .compassLabel.xlabel { bottom: calc(50% + 3px); text-align: center; font-weight:600;max-width: 40%; }
   .compassLabel.top { top: 3%; }
   .compassLabel.bottom { bottom: 3%; }
   .compassLabel.left { left: 3%; text-align: left; }

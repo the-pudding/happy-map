@@ -60,25 +60,20 @@
   let allDots = [];
   let filteredDots = $state([]);
 
-  // Helper to calculate offset based on story type
-  const getPixelOffset = (isLongText, windowWidth) => {
-    if (typeof window === "undefined") return -0.2;
-    // Standard offset 15%, Long text offset 40%
-    return window.innerHeight * (isLongText ? -0.4 : -0.2);
-  };
-
   const getInitialViewState = () => {
     const story = copy.story?.[0];
     if (story?.lng && story?.lat && story?.zoom) {
       const zoom = parseFloat(story.zoom);
       let targetY = parseFloat(story.lat) * 256;
 
-      if (typeof window !== "undefined" && window.innerWidth < 800) {
-        //
-        // FIXED: Check for longtext on initial load to prevent "jump"
-        const offset = getPixelOffset(story.longtext == "1", window.innerWidth);
-        // FIXED: += moves camera DOWN, so point appears HIGHER (above text)
-        targetY += offset / Math.pow(2, zoom);
+      if (typeof window !== "undefined") {
+        let offsetPercent = -0.1;
+        if (story.longtext == "1") {
+          offsetPercent = -0.4;
+        } else if (window.innerWidth < 800) {
+          offsetPercent = -0.2;
+        }
+        targetY += (window.innerHeight * offsetPercent) / Math.pow(2, zoom);
       }
 
       return {
@@ -121,12 +116,29 @@
     opacityAnimator.animate(backgroundOpacity, targetOpacity, duration);
   }
 
-  export function flyTo(targetX, targetY, zoom) {
+  export function flyTo(targetX, targetY, zoom, options = {}) {
     const currentTarget = viewState.target || [128, 128, 0];
     const currentZoom = viewState.zoom || 2;
 
+    // Apply vertical offset to push the target point lower on screen
+    // This moves the camera DOWN so the target appears HIGHER
+    let offsetPercent = -0.1; // 10% offset by default on desktop
+
+    if (typeof window !== "undefined" && !options.skipOffset) {
+      if (options.longtext) {
+        offsetPercent = -0.4; // 40% for long text
+      } else if (window.innerWidth < 800) {
+        offsetPercent = -0.2; // 20% on mobile
+      }
+    } else if (options.skipOffset) {
+      offsetPercent = 0;
+    }
+
+    const baseOffset = window.innerHeight * offsetPercent;
+    const adjustedTargetY = targetY + baseOffset / Math.pow(2, zoom);
+
     const dx = targetX - currentTarget[0];
-    const dy = targetY - currentTarget[1];
+    const dy = adjustedTargetY - currentTarget[1];
     const panDistance = Math.sqrt(dx * dx + dy * dy);
     const zoomChange = Math.abs(zoom - currentZoom);
     const zoomDistance = zoomChange * 30;
@@ -145,7 +157,7 @@
       minDuration + normalizedDistance * (maxDuration - minDuration);
 
     const newViewState = {
-      target: [targetX, targetY, 0],
+      target: [targetX, adjustedTargetY, 0],
       zoom,
       minZoom: 0,
       maxZoom: 6,
@@ -311,7 +323,7 @@
 
     const isExploreStage = (introStage ?? 0) >= copy.story.length;
 
-    return dots.filter(d => {
+    return dots.filter((d) => {
       // During story stages, always show story targets
       if (!isExploreStage && storyTargetIds.has(d._stableId)) {
         return true;
@@ -479,7 +491,11 @@
             narratorIcons.length
           ],
           getSize: [viewState.zoom],
-          getFilterValue: [JSON.stringify(filters), storyActiveIndex, isExploreStage]
+          getFilterValue: [
+            JSON.stringify(filters),
+            storyActiveIndex,
+            isExploreStage
+          ]
         },
         onClick: ({ object }) => {
           if (!object) return;
@@ -819,9 +835,7 @@
     }
 
     const currentStory = copy.story[currentStage];
-
-    // FIXED: Consolidate offset calculation to a single source of truth
-    const pixelOffset = getPixelOffset(currentStory.longtext == "1", window.innerWidth);
+    const isLongText = currentStory.longtext == "1";
 
     if (currentStage !== prevIntroStage) {
       const hasTargetId = currentStory?.targetId;
@@ -842,23 +856,16 @@
       if (hasTargetId) {
         const targetId = parseInt(currentStory.targetId, 10);
         const dots = getProcessedDots();
-        // NOTE: Ensure your JSON splitting logic aligns IDs correctly here.
-        // Assuming 't' + targetId aligns with your data logic.
         const dot = allDots.find((d) => d._stableId === `t${targetId}`);
 
         if (dot && deck) {
           const targetX = dot[0] * 256;
-          let targetY = dot[1] * 256;
+          const targetY = dot[1] * 256;
           const zoom = currentStory.zoom
             ? parseFloat(currentStory.zoom)
             : viewState.zoom;
 
-          if (window.innerWidth < 800) {
-            // FIXED: Use += to move camera DOWN (so point is HIGHER)
-            targetY += pixelOffset / Math.pow(2, zoom);
-          }
-
-          flyTo(targetX, targetY, zoom);
+          flyTo(targetX, targetY, zoom, { longtext: isLongText });
 
           // Show popup after fly animation completes
           setTimeout(() => {
@@ -880,7 +887,7 @@
                 wiggleAnimator.start();
               }
             }
-          }, 0); // Wait for fly animation (1s)
+          }, 0);
         }
       } else if (
         currentStory?.lng &&
@@ -889,15 +896,10 @@
         deck
       ) {
         const targetX = parseFloat(currentStory.lng) * 256;
-        let targetY = parseFloat(currentStory.lat) * 256;
+        const targetY = parseFloat(currentStory.lat) * 256;
         const zoom = parseFloat(currentStory.zoom);
 
-        if (window.innerWidth < 800) {
-          // FIXED: Use += to move camera DOWN (so point is HIGHER)
-          targetY += pixelOffset / Math.pow(2, zoom);
-        }
-
-        flyTo(targetX, targetY, zoom);
+        flyTo(targetX, targetY, zoom, { longtext: isLongText });
       }
 
       const storyIcon = currentStory.icon || "front";
