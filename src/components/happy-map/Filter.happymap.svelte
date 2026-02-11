@@ -168,7 +168,7 @@
     background: var(--paneldark);
     color: white;
     z-index: 99999;
-    border-left: 1px solid #264a5c;
+    border-left: 1px solid var(--panelborder);
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
     overflow-y: auto;
   }
@@ -177,7 +177,7 @@
     margin: 0 0 10px 0;
     font-size: 13px;
     font-weight: bold;
-    border-bottom: 1px solid #264a5c;
+    border-bottom: 1px solid var(--panelborder);
     padding-bottom: 6px;
   }
 
@@ -203,7 +203,7 @@
   .group-actions button {
     background: none;
     border: none;
-    color: #5aa6cf;
+    color: var(--panelbutton);
     font-size: 10px;
     cursor: pointer;
     padding: 0 4px;
@@ -222,7 +222,7 @@
     margin-bottom: 8px;
     cursor: pointer;
     font-size: 13px;
-    color: #cbd5e1;
+    color: var(--panellabel);
     user-select: none;
   }
 
@@ -236,7 +236,7 @@
     margin: 0;
     width: 18px;
     height: 18px;
-    border: 1px solid #5aa6cf;
+    border: 1px solid var(--panelhl);
     border-radius: 3px;
     background-color: rgba(0, 36, 54, 0.5);
     display: grid;
@@ -277,7 +277,7 @@
     left: 15px;
     background: none;
     border: none;
-    color: #5aa6cf;
+    color: var(--panelhl);
     font-size: 24px;
     cursor: pointer;
     line-height: 1;
@@ -292,7 +292,7 @@
   .search-input {
     width: 100%;
     background-color: rgba(0, 36, 54, 0.5);
-    border: 1px solid #5aa6cf;
+    border: 1px solid var(--panelhl);
     border-radius: 4px;
     padding: 8px 10px;
     padding-right: 30px; /* NEW: Add space for the X button */
@@ -309,7 +309,7 @@
   }
 
   .search-input::placeholder {
-    color: #5aa6cf;
+    color: var(--panelhl);
     opacity: 0.7;
   }
 
@@ -321,7 +321,7 @@
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #5aa6cf;
+    color: var(--panelhl);
     font-size: 18px;
     cursor: pointer;
     line-height: 1;

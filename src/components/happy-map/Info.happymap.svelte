@@ -44,26 +44,27 @@
     /* color: #ffec70; */
     margin: 0 0 10px 0;
     line-height: 1;
-    font-family: var(--handwriting);
+    /* font-family: var(--sans); */
     font-weight: 300;
+    font-family: var(--handwriting);
   }
 
   .infoPanel .byline {
     font-size: 13px;
     /* color: #8db1b3; */
     margin-bottom: 25px;
-    border-bottom: 1px solid #264a5c;
+    border-bottom: 0.5px solid var(--panelline);
     padding-bottom: 15px;
   }
 
   .infoPanel :global(a) {
-    color: var(--hlcolor);
+    color: var(--panelhl);
     text-decoration: none;
-    border-bottom: 1px dotted var(--hlcolor);
+    border-bottom: 1px dotted var(--panelline);
   }
 
   .infoPanel :global(a:hover) {
-    border-bottom: 1px solid var(--hlcolor);
+    border-bottom: 1px solid var(--panelhl);
   }
 
   .infoPanel :global(h4) {
@@ -73,14 +74,14 @@
     color: var(--panelhl);
     text-transform: uppercase;
     letter-spacing: 1px;
-    border-bottom: 1px solid #264a5c;
+    border-bottom: 0.5px solid var(--panelline);
     padding-bottom: 5px;
   }
 
   .infoPanel :global(p) {
     font-size: 13px;
     line-height: 1.5;
-    color: #cbd5e1;
+    color: #fff;
     margin-bottom: 15px;
   }
 
@@ -105,7 +106,7 @@
     left: 15px;
     background: none;
     border: none;
-    color: #5aa6cf;
+    color: var(--panelhl);
     font-size: 24px;
     cursor: pointer;
     line-height: 1;

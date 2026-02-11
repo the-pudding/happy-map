@@ -22,8 +22,8 @@
     <div class="popup-content">
       <button class="popup-close" onclick={close}>×</button>
       <div class="info">
-        {Math.round(popupInfo.data[3])} / {popupInfo.data[5].toUpperCase()} / {convertCountries(
-          popupInfo.data[4])}
+        <strong>{Math.round(popupInfo.data[3])} / {popupInfo.data[5].toUpperCase()} / {convertCountries(
+          popupInfo.data[4])}</strong>
         <br />
         <span>
           {marriedlookup[popupInfo.data[6]]} /
@@ -44,7 +44,7 @@
     position: absolute;
     transform: translate(-50%, -100%);
     z-index: 100;
-    pointer-events: auto;
+    pointer-events: none;
     padding-bottom: 20px;
   }
 
@@ -52,7 +52,7 @@
     background: var(--popupbg);
     color: #333;
     padding: 10px;
-    border-radius: 4px;
+    border-radius: 12px;
     box-shadow: 0 3px 14px rgba(0, 0, 0, 0.4);
     width: 280px;
     font-family: var(--sans);
@@ -85,14 +85,14 @@
     font-size: 13px;
     color: #000;
     margin-bottom: 5px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #555;
     padding-bottom: 2px;
     /* text-transform: uppercase; */
     letter-spacing: 0px;
   }
 
   .popup-content .info span {
-    color: #888;
+    color: #333;
     /* text-transform: none; */
   }
 

@@ -37,7 +37,7 @@
     pointer-events: none;
   }
   .popup-content {
-    background: var(--popupbg);
+    background: var(--narratorpopupbg);
     color: var(--popuptext);
     padding: 10px 20px;
     border-radius: 4px;
@@ -57,19 +57,21 @@
     transform: translateX(-50%);
     border-width: 8px 8px 0;
     border-style: solid;
-    border-color: var(--popupbg) transparent transparent transparent;
+    border-color: var(--narratorpopupbg) transparent transparent transparent;
   }
   .popup-content :global(h1) {
-    margin: 0 0 8px 0;
+    margin: 0 0 0px 0;
     /* font-size: 1.4em; */
     /* font-weight: 600; */
-    font-size: 15px;
-    font-weight: bold;
-    font-family: var(--sans);
+    font-size: 20px;
+    /* font-weight: bold; */
+    /* font-family: var(--sans); */
+    font-family: var(--handwriting);
   }
   .popup-content :global(.byline) {
-    font-size: 0.9em;
-    color: #666;
+    font-size: 1em;
+    margin-top: -10px;
+    color: #999;
   }
   .popup-content :global(a) {
     color: var(--hlcolor);

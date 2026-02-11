@@ -1,7 +1,7 @@
 <script>
   import Text from "$components/happy-map/Text.happymap.svelte";
   import copy from "$data/copy.json";
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy } from "svelte";
 
   let { introStage, onStep } = $props();
   const isExploreMode = $derived(introStage >= copy.story.length);
@@ -24,13 +24,13 @@
   }
 
   onMount(() => {
-    hasHover = window.matchMedia('(hover: hover)').matches;
+    hasHover = window.matchMedia("(hover: hover)").matches;
     window.addEventListener("keydown", handleKeydown);
     window.addEventListener("keyup", handleKeyup);
   });
 
   onDestroy(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       window.removeEventListener("keydown", handleKeydown);
       window.removeEventListener("keyup", handleKeyup);
     }
@@ -38,7 +38,9 @@
 </script>
 
 {#if isExploreMode}
-  <button class="backToTour" onclick={() => onStep(-introStage)}>Back to tour</button>
+  <button class="backToTour" onclick={() => onStep(-introStage)}
+    >Back to story</button
+  >
 {:else}
   <div class="introText">
     <div class="buttonContainer">
@@ -118,14 +120,15 @@
 
   .backToTour:hover,
   .skipBtn:hover {
-    background: repeating-linear-gradient(
-      45deg,
-      rgba(0, 100, 100, 0.2) 0px,
-      rgba(0, 0, 0, 0.2) 1px,
-      transparent 1px,
-      transparent 5px
-    ),
-    var(--buttonbg-hover);
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(0, 100, 100, 0.2) 0px,
+        rgba(0, 0, 0, 0.2) 1px,
+        transparent 1px,
+        transparent 5px
+      ),
+      var(--buttonbg-hover);
   }
 
   .introText {
@@ -177,11 +180,11 @@
     position: relative;
     margin-top: 10px;
   }
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
     .buttonContainer {
-    width: 80%;
-    left: 10%;
-  }
+      width: calc(100% - clamp(140px, 22vw, 180px));
+      left: calc(clamp(140px, 22vw, 180px) / 2);
+    }
   }
 
   .introText button {
@@ -192,7 +195,8 @@
     color: var(--buttontext);
     bottom: 0;
     height: 100%;
-    background: repeating-linear-gradient(
+    background:
+      repeating-linear-gradient(
         45deg,
         var(--crosshatch) 0px,
         var(--crosshatch) 1px,
@@ -215,7 +219,10 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+    transition:
+      transform 0.1s,
+      box-shadow 0.1s,
+      background 0.2s;
     touch-action: manipulation;
   }
 
@@ -235,7 +242,8 @@
   }
 
   .introText button:hover {
-    background: repeating-linear-gradient(
+    background:
+      repeating-linear-gradient(
         45deg,
         var(--crosshatch) 0px,
         var(--crosshatch) 1px,
@@ -267,7 +275,7 @@
   }
 
   /* Hover Container: Restore to true center */
-/*   .buttonContainer:hover button .btn-content {
+  /*   .buttonContainer:hover button .btn-content {
     transform: translateX(0);
   } */
 
@@ -282,7 +290,7 @@
     font-size: 11px;
     font-family: var(--sans);
     background: rgba(255, 255, 255, 0.15);
-    border: 2px solid rgba(0,0,0,1);
+    border: 2px solid rgba(0, 0, 0, 1);
     border-radius: 3px;
     color: var(--buttontext);
     opacity: 0.6;

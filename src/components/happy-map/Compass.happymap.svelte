@@ -12,21 +12,43 @@
   let viewportHeight = $state(140);
   let ready = $state(false);
 
+  // Performance: Cache sampled dots and only recalculate when data changes
+  const MAX_SAMPLE_SIZE = 500;
+  let sampledDots = [];
+  let lastDotsLength = 0;
+  let lastCanvasSize = 0;
+
+  // Sample dots evenly from the array
+  function sampleDots(dots, maxSamples) {
+    if (!dots || dots.length === 0) return [];
+    if (dots.length <= maxSamples) return dots;
+
+    const step = dots.length / maxSamples;
+    const sampled = [];
+    for (let i = 0; i < maxSamples; i++) {
+      sampled.push(dots[Math.floor(i * step)]);
+    }
+    return sampled;
+  }
+
   // --- 1. Draw Density Map ---
   function drawDensity() {
     if (!canvasElement || !compassContainer || !allDots) return;
 
-    const ctx = canvasElement.getContext('2d');
     const cw = compassContainer.offsetWidth;
     const ch = compassContainer.offsetHeight;
 
     if (cw === 0 || ch === 0) return;
 
+    const ctx = canvasElement.getContext('2d');
+
     // Handle high-DPI displays
     const dpr = window.devicePixelRatio || 1;
-    if (canvasElement.width !== cw * dpr || canvasElement.height !== ch * dpr) {
-      canvasElement.width = cw * dpr;
-      canvasElement.height = ch * dpr;
+    const canvasSize = cw * dpr;
+
+    if (canvasElement.width !== canvasSize || canvasElement.height !== canvasSize) {
+      canvasElement.width = canvasSize;
+      canvasElement.height = canvasSize;
       ctx.scale(dpr, dpr);
     }
 
@@ -36,26 +58,33 @@
     // If fewer than 50 dots, show nothing (cleaner look)
     if (allDots.length < 50) return;
 
+    // Only resample if dots array changed
+    if (allDots.length !== lastDotsLength || lastCanvasSize !== cw) {
+      sampledDots = sampleDots(allDots, MAX_SAMPLE_SIZE);
+      lastDotsLength = allDots.length;
+      lastCanvasSize = cw;
+    }
+
     // Calculate drawing area based on 11% padding
     const padding = cw * 0.11;
     const innerSize = cw * 0.78;
 
-    // --- TUNED DENSITY SETTINGS ---
+    // Adjust opacity based on sample size vs actual size
+    const sampleRatio = allDots.length / sampledDots.length;
+    const baseOpacity = Math.max(0.05, Math.min(0.15, 300 / allDots.length));
+    const adjustedOpacity = Math.min(0.4, baseOpacity * Math.sqrt(sampleRatio));
 
-    // 1. Lower Opacity Cap: prevents saturation.
-    //    Range: 0.03 (for 4000 dots) to 0.4 (for 50 dots)
-    const dynamicOpacity = Math.max(0.05, Math.min(0.15, 300 / allDots.length));
-
-    // 2. Dark Ink Color: Deep blue-black works best with multiply
-    ctx.fillStyle = `rgba(250, 30, 140, ${dynamicOpacity})`;
-
-    // 3. Blend Mode: Multiply creates a true "ink buildup" effect
+    ctx.fillStyle = `rgba(250, 30, 140, ${adjustedOpacity})`;
     ctx.globalCompositeOperation = 'multiply';
 
-    // 4. Larger Radius: Increases the chance of overlap, making clusters pop
-    const radius = 2;
+    // Slightly larger radius to compensate for fewer dots
+    const radius = Math.min(3, Math.max(2, 2.5 * Math.sqrt(sampleRatio / 2)));
 
-    allDots.forEach(dot => {
+    // Pre-calculate constants outside loop
+    const invSize = innerSize;
+
+    for (let i = 0; i < sampledDots.length; i++) {
+      const dot = sampledDots[i];
       let rawX, rawY;
 
       if (Array.isArray(dot)) {
@@ -66,19 +95,19 @@
         rawY = parseFloat(dot.lat || dot.y);
       }
 
-      if (isNaN(rawX) || isNaN(rawY)) return;
+      if (isNaN(rawX) || isNaN(rawY)) continue;
 
       // Normalization check
       if (rawX > 1) rawX /= 256;
       if (rawY > 1) rawY /= 256;
 
-      const x = padding + (rawX * innerSize);
-      const y = padding + (rawY * innerSize);
+      const x = padding + (rawX * invSize);
+      const y = padding + (rawY * invSize);
 
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
-    });
+    }
 
     // Reset blend mode
     ctx.globalCompositeOperation = 'source-over';
@@ -116,35 +145,52 @@
     }
   }
 
+  // Debounce helper
+  function debounce(fn, delay) {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  const debouncedDrawDensity = debounce(drawDensity, 100);
+
   onMount(() => {
+    // Initial draw
+    updateViewport();
+    drawDensity();
+
+    // Less frequent polling interval
     const interval = setInterval(() => {
-        if (compassContainer) {
-            updateViewport();
-            drawDensity();
-        }
+      if (compassContainer) {
+        updateViewport();
+      }
     }, 500);
 
     const ro = new ResizeObserver(() => {
       updateViewport();
-      drawDensity();
+      debouncedDrawDensity();
     });
     if (compassContainer) ro.observe(compassContainer);
 
     return () => {
-        clearInterval(interval);
-        ro.disconnect();
-    }
+      clearInterval(interval);
+      ro.disconnect();
+    };
   });
 
-  // Reactive: Redraw whenever data changes
+  // Reactive: Redraw whenever data changes (debounced)
   $effect(() => {
     const _dots = allDots;
     if (compassContainer && canvasElement) {
-       drawDensity();
+      // Force resample on data change
+      lastDotsLength = 0;
+      debouncedDrawDensity();
     }
   });
 
-  // Reactive: Update box on move
+  // Reactive: Update box on move (viewport box is cheap, no debounce needed)
   $effect(() => {
     const _ = viewState?.zoom;
     const __ = viewState?.target;
@@ -214,21 +260,12 @@
   }
 
  /* Tablet / Small Laptop: Move to top-right */
-  @media (max-width: 1200px) {
+  @media (max-width: 500px) {
     .compass {
       left: auto;
       bottom: auto;
-      right: 15px;
-      top: 15px;
-    }
-  }
-
-  /* Mobile: Push down to clear the iOS Notch/Status Bar */
-  @media (max-width: 600px) {
-    .compass {
-      /* Use env() to detect the notch size, with a 60px fallback */
-      top: 10px;
       right: 10px;
+      top: 10px;
     }
   }
 

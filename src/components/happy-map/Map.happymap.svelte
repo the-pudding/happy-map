@@ -61,8 +61,8 @@
   let filteredDots = $state([]);
 
   // Helper to calculate offset based on story type
-  const getPixelOffset = (isLongText) => {
-    if (typeof window === "undefined") return 0;
+  const getPixelOffset = (isLongText, windowWidth) => {
+    if (typeof window === "undefined") return -0.2;
     // Standard offset 15%, Long text offset 40%
     return window.innerHeight * (isLongText ? -0.4 : -0.2);
   };
@@ -73,10 +73,10 @@
       const zoom = parseFloat(story.zoom);
       let targetY = parseFloat(story.lat) * 256;
 
-      if (typeof window !== "undefined" && window.innerWidth < 600) {
+      if (typeof window !== "undefined" && window.innerWidth < 800) {
         //
         // FIXED: Check for longtext on initial load to prevent "jump"
-        const offset = getPixelOffset(story.longtext == "1");
+        const offset = getPixelOffset(story.longtext == "1", window.innerWidth);
         // FIXED: += moves camera DOWN, so point appears HIGHER (above text)
         targetY += offset / Math.pow(2, zoom);
       }
@@ -261,38 +261,68 @@
     if (processedDots && processedDots.length > 0) return processedDots;
     if (!allDots || allDots.length === 0) return [];
 
-    const mustInclude = storyTargetIds;
+    // Check if we're in explore stage (past the story)
+    const isExploreStage = (introStage ?? 0) >= copy.story.length;
     const finalSelection = [];
     const includedIds = new Set();
     const candidates = [];
 
-    // First pass: find ALL story targets (can't skip these)
-    for (const dot of allDots) {
-      if (mustInclude.has(dot._stableId)) {
-        finalSelection.push(dot);
-        includedIds.add(dot._stableId);
+    // First pass: find ALL story targets (only force-include during story stages, not explore)
+    if (!isExploreStage) {
+      for (const dot of allDots) {
+        if (storyTargetIds.has(dot._stableId)) {
+          finalSelection.push(dot);
+          includedIds.add(dot._stableId);
+        }
       }
     }
 
-    // Second pass: collect candidates until we have enough
+    // Second pass: collect ALL candidates that match filters
     for (const dot of allDots) {
       if (includedIds.has(dot._stableId)) continue;
       if (matchesFilters(dot, filters)) {
         candidates.push(dot);
-        // Early exit once we have enough candidates
-        if (candidates.length >= MAX_ICONS - finalSelection.length) break;
       }
     }
 
-    // Fill remaining slots from candidates
+    // Sample evenly from candidates to get representative distribution across regions
     const remainingSlots = MAX_ICONS - finalSelection.length;
-    for (let i = 0; i < Math.min(remainingSlots, candidates.length); i++) {
-      finalSelection.push(candidates[i]);
+    if (candidates.length <= remainingSlots) {
+      // If we have fewer candidates than slots, use all of them
+      finalSelection.push(...candidates);
+    } else {
+      // Sample evenly across the candidates array to maintain geographic distribution
+      const step = candidates.length / remainingSlots;
+      for (let i = 0; i < remainingSlots; i++) {
+        const index = Math.floor(i * step);
+        finalSelection.push(candidates[index]);
+      }
     }
 
     processedDots = spreadDotsToGrid(finalSelection);
     processedDots.sort((a, b) => a[1] - b[1]);
     return processedDots;
+  }
+
+  // Get only the dots that will actually be visible (for Compass)
+  function getVisibleDots() {
+    const dots = getProcessedDots();
+    if (!dots || dots.length === 0) return [];
+
+    const isExploreStage = (introStage ?? 0) >= copy.story.length;
+
+    return dots.filter(d => {
+      // During story stages, always show story targets
+      if (!isExploreStage && storyTargetIds.has(d._stableId)) {
+        return true;
+      }
+
+      if (storyActiveIndex >= 0 && d._stableId === storyActiveIndex) {
+        return true;
+      }
+
+      return matchesFilters(d, filters);
+    });
   }
 
   async function loadBaseMapData() {
@@ -336,7 +366,8 @@
       allDots = [...targetedDots, ...initialDots];
 
       processedDots = null;
-      filteredDots = getProcessedDots();
+      getProcessedDots(); // Rebuild processedDots
+      filteredDots = getVisibleDots(); // Only visible dots for Compass
       if (deck) renderDeck();
 
       // Load explore in background
@@ -368,6 +399,9 @@
     const selectedId = popupInfo?.data?._stableId;
     const currentStory = copy.story?.[introStage ?? 0];
     const showLabels = currentStory ? currentStory.labels != -1 : true;
+
+    // Check if we're in explore stage
+    const isExploreStage = (introStage ?? 0) >= copy.story.length;
 
     const dataFilterExtension = new DataFilterExtension({ filterSize: 1 });
 
@@ -424,8 +458,9 @@
         parameters: { depthTest: false },
         transitions: { getPosition: dotTransition },
         getFilterValue: (d) => {
-          // Always show story targets
-          if (storyTargetIds.has(d._stableId)) {
+          // During story stages, always show story targets
+          // During explore stage, apply filters to ALL icons including story targets
+          if (!isExploreStage && storyTargetIds.has(d._stableId)) {
             return 1;
           }
 
@@ -444,7 +479,7 @@
             narratorIcons.length
           ],
           getSize: [viewState.zoom],
-          getFilterValue: [JSON.stringify(filters), storyActiveIndex]
+          getFilterValue: [JSON.stringify(filters), storyActiveIndex, isExploreStage]
         },
         onClick: ({ object }) => {
           if (!object) return;
@@ -576,25 +611,38 @@
     deck.setProps({ layers });
   }
 
+  // Track previous intro stage to detect explore stage transition
+  let prevIntroStageForFilter = -1;
+
   $effect(() => {
     const newFilterKey = JSON.stringify(filters);
+    const currentStage = introStage ?? 0;
+    const isExploreStage = currentStage >= copy.story.length;
+    const wasExploreStage = prevIntroStageForFilter >= copy.story.length;
+    const exploreStageChanged = isExploreStage !== wasExploreStage;
 
-    // Check if we need to update based on filters or initial load
+    // Check if we need to update based on filters, initial load, or explore stage transition
     if (
       newFilterKey !== processedDotsFilterKey ||
-      (!processedDots && allDots.length > 0)
+      (!processedDots && allDots.length > 0) ||
+      exploreStageChanged
     ) {
       // FIXED: Always set transition to 0 when filters change so icons snap instantly
       dotTransition = 0;
       processedDotsFilterKey = newFilterKey;
+      prevIntroStageForFilter = currentStage;
       processedDots = null;
-      filteredDots = getProcessedDots();
+      getProcessedDots(); // Rebuild processedDots
+      filteredDots = getVisibleDots(); // Only visible dots for Compass
       if (deck) renderDeck();
 
       // Restore transition after a moment
       setTimeout(() => {
         dotTransition = 300;
       }, 300);
+    } else {
+      // Even if filters didn't change, update visible dots (for storyActiveIndex changes)
+      filteredDots = getVisibleDots();
     }
     storyActiveIndex;
     introStage;
@@ -773,7 +821,7 @@
     const currentStory = copy.story[currentStage];
 
     // FIXED: Consolidate offset calculation to a single source of truth
-    const pixelOffset = getPixelOffset(currentStory.longtext == "1");
+    const pixelOffset = getPixelOffset(currentStory.longtext == "1", window.innerWidth);
 
     if (currentStage !== prevIntroStage) {
       const hasTargetId = currentStory?.targetId;
@@ -805,7 +853,7 @@
             ? parseFloat(currentStory.zoom)
             : viewState.zoom;
 
-          if (window.innerWidth < 600) {
+          if (window.innerWidth < 800) {
             // FIXED: Use += to move camera DOWN (so point is HIGHER)
             targetY += pixelOffset / Math.pow(2, zoom);
           }
@@ -844,7 +892,7 @@
         let targetY = parseFloat(currentStory.lat) * 256;
         const zoom = parseFloat(currentStory.zoom);
 
-        if (window.innerWidth < 600) {
+        if (window.innerWidth < 800) {
           // FIXED: Use += to move camera DOWN (so point is HIGHER)
           targetY += pixelOffset / Math.pow(2, zoom);
         }

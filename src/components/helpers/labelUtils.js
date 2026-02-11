@@ -106,7 +106,7 @@ const textSettings = {
   return [allLabelsGlow, allLabelsText];
 }
 
-export function spreadDotsToGrid(dots, cellSize = 0.005, spreadFactor = 0.7) {
+export function spreadDotsToGrid(dots, cellSize = 0.005, spreadFactor = 0.9) {
   const grid = new Map();
   return dots.map((dot) => {
     const cellX = Math.floor(dot[0] / cellSize);
