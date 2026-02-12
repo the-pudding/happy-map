@@ -34,6 +34,23 @@
     storyActiveIndex = $bindable(),
     popupInfo = $bindable(),
     isLoading = $bindable(true),
+    narratorMessages = [
+      "I guess one thing that made me happy is going for hotpot on a weekday afternoon.",
+      "Hey, go talk to other people!",
+      "Are we technically on an archipelago?",
+      "Have you tried filtering yet? It's really great.",
+      "I wrote about <a href='https://pudding.cool/2023/09/invisible-epidemic/' target=_blank>loneliness</a> a few years ago. Read it!",
+      "The behind-the-scenes for this project is on <a href='https://buttondown.com/charthead/' target=_blank>my newsletter</a>.",
+      "It makes me happy to read this short story titled <a href='https://www.galactanet.com/oneoff/theegg_mod.html#anc2' target=_blank>The Egg</a>.",
+      "I was delighted to <a href='https://www.youtube.com/watch?v=ne6tB2KiZuk' target=_blank>watch</a> Bobby McFerrin play his audience.",
+      "The <a href='https://www.inbflat.net/' target=_blank>B-flat project</a> is so delightful.",
+      "Seeing this <a href='https://www.youtube.com/watch?v=ceiDpI_ZabA' target=_blank>video</a> of Dave Brubek makes me happy.",
+      "This <a href='https://web.archive.org/web/20221001113516/https://www.newyorker.com/magazine/2017/06/05/toni-morrison-the-work-you-do-the-person-you-are' target=_blank>Toni Morrison essay</a> always grounds me.",
+      "Our <a href='https://kottke.org/23/06/blackstar-the-sun-in-a-new-light' target=_blank>universe</a> makes me happy.",
+      "A <a href='https://slate.com/life/2024/08/supermarket-sweep-game-show-gay-couple.html' target=_blank>delightful story</a> about two contestants on Supermarket Sweep.",
+      "I go back and read this <a href='https://xkcd.com/3172/' target=_blank>XKCD comic</a> every few years.",
+      "This is a <a href='https://np.reddit.com/r/videos/comments/9mu10r/comment/e7hextt/' target=_blank>Reddit thread</a> of videos showing when musicians find out they've *made it*."
+    ],
     onReady
   } = $props();
 
@@ -93,6 +110,8 @@
   let activeNarratorId = $state(null);
   let narratorPopupInfo = $state(null);
   let narratorShouldTransition = $state(true);
+  let narratorPopupDismissed = $state(false);
+  let lastRandomMessageIndex = -1;
 
   let processedDots = null;
   let processedDotsFilterKey = "";
@@ -144,8 +163,8 @@
     const zoomDistance = zoomChange * 30;
     const totalDistance = panDistance + zoomDistance;
 
-    const minDuration = 1000;
-    const maxDuration = 2500;
+    const minDuration = options.shortDuration ? 300 : 1000;
+    const maxDuration = options.shortDuration ? 800 : 2500;
     const minDistance = 10;
     const maxDistance = 150;
 
@@ -156,13 +175,17 @@
     const transitionDuration =
       minDuration + normalizedDistance * (maxDuration - minDuration);
 
+    // Custom easing: fast start, gentle ease at end (ease-out cubic)
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
     const newViewState = {
       target: [targetX, adjustedTargetY, 0],
       zoom,
       minZoom: 0,
       maxZoom: 6,
       transitionDuration,
-      transitionInterpolator: new OrthographicFlyToInterpolator()
+      transitionInterpolator: new OrthographicFlyToInterpolator(),
+      transitionEasing: options.shortDuration ? easeOutCubic : undefined
     };
 
     viewState = newViewState;
@@ -208,6 +231,40 @@
   const getIconSize = (zoom) => 3 + Math.pow(zoom, 2.1);
   const getWaveScale = (zoom) => 0.6 + zoom * 0.25;
 
+  // Check if we're in the explore-preview stage (second-to-last)
+  function isExplorePreviewStage() {
+    return (introStage ?? 0) === copy.story.length - 1;
+  }
+
+  // Check if we're in explore stage (past the story)
+  function isExploreStage() {
+    return (introStage ?? 0) >= copy.story.length;
+  }
+
+  // Check if we should show random narrator messages (explore-preview after dismissal, or explore stage)
+  function shouldShowRandomMessages() {
+    return (isExplorePreviewStage() && narratorPopupDismissed) || isExploreStage();
+  }
+
+  // Dismiss narrator popup on interaction during explore-preview stage
+  function handleExplorePreviewInteraction() {
+    if (isExplorePreviewStage() || isExploreStage()) {
+      narratorPopupDismissed = true;
+      narratorPopupInfo = null;
+    }
+  }
+
+  // Get a random narrator message (different from last one)
+  function getRandomNarratorMessage() {
+    if (!narratorMessages || narratorMessages.length === 0) return "";
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * narratorMessages.length);
+    } while (newIndex === lastRandomMessageIndex && narratorMessages.length > 1);
+    lastRandomMessageIndex = newIndex;
+    return narratorMessages[newIndex];
+  }
+
   function getNarratorPosition() {
     const currentStage = introStage ?? 0;
     const currentStory = copy.story?.[currentStage];
@@ -248,6 +305,7 @@
   }
 
   function handleZoomIn() {
+    handleExplorePreviewInteraction();
     const newZoom = Math.min(viewState.zoom + ZOOM_STEP, viewState.maxZoom);
     viewState = {
       ...viewState,
@@ -259,6 +317,7 @@
   }
 
   function handleZoomOut() {
+    handleExplorePreviewInteraction();
     const newZoom = Math.max(viewState.zoom - ZOOM_STEP, viewState.minZoom);
     viewState = {
       ...viewState,
@@ -501,20 +560,38 @@
           if (!object) return;
           const viewport = deck.getViewports()[0];
           if (!viewport) return;
+
+          // Dismiss narrator popup on icon click during explore-preview
+          handleExplorePreviewInteraction();
+
           const narratorPos = getNarratorPosition();
           const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
             object[0],
             object[1],
             narratorPos
           );
-          const [x, y] = viewport.project([nudgedX * 256, nudgedY * 256]);
-          popupInfo = {
-            x,
-            y: y - getIconSize(viewState.zoom) * ICON_POPUP_OFFSET,
-            data: object,
-            nudgedPosition: [nudgedX, nudgedY]
-          };
-          wiggleAnimator.start();
+
+          // Only center on click for mobile
+          const isMobile = typeof window !== "undefined" && window.innerWidth < 800;
+          if (isMobile) {
+            const targetX = nudgedX * 256;
+            const targetY = nudgedY * 256;
+            flyTo(targetX, targetY, viewState.zoom, { shortDuration: true });
+          }
+
+          // Show popup after a short delay on mobile, immediately on desktop
+          setTimeout(() => {
+            const vp = deck.getViewports()[0];
+            if (!vp) return;
+            const [x, y] = vp.project([nudgedX * 256, nudgedY * 256]);
+            popupInfo = {
+              x,
+              y: y - getIconSize(viewState.zoom) * ICON_POPUP_OFFSET,
+              data: object,
+              nudgedPosition: [nudgedX, nudgedY]
+            };
+            wiggleAnimator.start();
+          }, isMobile ? 50 : 0);
         }
       });
     }
@@ -569,10 +646,16 @@
           parseFloat(object.lng) * 256,
           parseFloat(object.lat) * 256
         ]);
+
+        // During explore-preview (after dismissal) or explore stage, show random messages
+        const messageText = shouldShowRandomMessages()
+          ? getRandomNarratorMessage()
+          : object.text;
+
         narratorPopupInfo = {
           x,
           y: y - getIconSize(viewState.zoom) * NARRATOR_POPUP_OFFSET,
-          text: object.text
+          text: messageText
         };
       }
     });
@@ -722,9 +805,10 @@
         isDragging ? "grabbing" : isHovering ? "pointer" : "grab",
       onViewStateChange: ({ viewState: newViewState, interactionState }) => {
         viewState = newViewState;
-        if (interactionState?.isDragging) {
+        if (interactionState?.isDragging || interactionState?.isZooming) {
           popupInfo = null;
           wiggleAnimator.stop();
+          handleExplorePreviewInteraction();
         }
         if (deck) renderDeck();
       },
@@ -761,21 +845,8 @@
       },
       onClick: ({ object }) => {
         if (object) {
-          const viewport = deck.getViewports()[0];
-          if (!viewport) return;
-          const narratorPos = getNarratorPosition();
-          const [nudgedX, nudgedY] = nudgeAwayFromNarrator(
-            object[0],
-            object[1],
-            narratorPos
-          );
-          const [x, y] = viewport.project([nudgedX * 256, nudgedY * 256]);
-          popupInfo = {
-            x,
-            y: y - getIconSize(viewState.zoom) * ICON_POPUP_OFFSET,
-            data: object
-          };
-          wiggleAnimator.start();
+          // Icon clicks are now handled in the IconLayer onClick
+          // This handles clicks on other objects if needed
         } else {
           popupInfo = null;
           wiggleAnimator.stop();
@@ -809,27 +880,21 @@
 
   $effect(() => {
     const currentStage = introStage ?? 0;
+    const wasExplorePreview = prevIntroStage === copy.story.length - 1;
+    const isExplorePreview = currentStage === copy.story.length - 1;
+
+    // Reset when leaving explore-preview stage
+    if (wasExplorePreview && !isExplorePreview) {
+      narratorPopupDismissed = false;
+    }
 
     if (currentStage >= copy.story.length) {
-      if (narratorIcons.length > 0) {
-        narratorPopupInfo = null;
-        narratorShouldTransition = true;
-        const fadeOut = setInterval(() => {
-          if (narratorIcons.length === 0) {
-            clearInterval(fadeOut);
-            return;
-          }
-          const newOpacity = narratorIcons[0].opacity - 0.1;
-          if (newOpacity <= 0) {
-            narratorIcons = [];
-            activeNarratorId = null;
-            clearInterval(fadeOut);
-            if (deck) renderDeck();
-          } else {
-            narratorIcons = [{ ...narratorIcons[0], opacity: newOpacity }];
-            if (deck) renderDeck();
-          }
-        }, 30);
+      // In explore stage - keep narrator visible but dismiss popup
+      narratorPopupInfo = null;
+      // Set narrator icon to front variant
+      if (narratorIcons.length > 0 && narratorIcons[0].icon !== "front") {
+        narratorIcons = [{ ...narratorIcons[0], icon: "front" }];
+        if (deck) renderDeck();
       }
       return;
     }

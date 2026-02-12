@@ -3,23 +3,65 @@
   import Text from "$components/happy-map/Text.happymap.svelte";
 
   let popupElement = $state(null);
-  let popupWidth = $state(0);
   let popupHeight = $state(0);
+  let isReady = $state(false);
+  let currentText = $state("");
 
-  // Measure popup dimensions after render
+  // Reset ready state when text changes
   $effect(() => {
-    if (popupElement && narratorPopupInfo) {
-      const rect = popupElement.getBoundingClientRect();
-      popupWidth = rect.width;
-      popupHeight = rect.height;
+    if (narratorPopupInfo?.text !== currentText) {
+      isReady = false;
+      currentText = narratorPopupInfo?.text || "";
+    }
+  });
+
+  // Wait for images to load, then measure and show
+  $effect(() => {
+    if (popupElement && narratorPopupInfo && !isReady) {
+      const images = popupElement.querySelectorAll('img');
+
+      if (images.length === 0) {
+        // No images, measure immediately
+        requestAnimationFrame(() => {
+          const rect = popupElement.getBoundingClientRect();
+          popupHeight = rect.height;
+          isReady = true;
+        });
+      } else {
+        // Wait for all images to load
+        let loadedCount = 0;
+        const totalImages = images.length;
+
+        const checkAllLoaded = () => {
+          loadedCount++;
+          if (loadedCount >= totalImages) {
+            requestAnimationFrame(() => {
+              const rect = popupElement.getBoundingClientRect();
+              popupHeight = rect.height;
+              isReady = true;
+            });
+          }
+        };
+
+        images.forEach((img) => {
+          if (img.complete) {
+            checkAllLoaded();
+          } else {
+            img.addEventListener('load', checkAllLoaded, { once: true });
+            img.addEventListener('error', checkAllLoaded, { once: true });
+          }
+        });
+      }
     }
   });
 </script>
+
 {#if narratorPopupInfo}
   {#key narratorPopupInfo.text}
     <div
       bind:this={popupElement}
       class="popup-container"
+      class:visible={isReady}
       style="left: {narratorPopupInfo.x}px; top: {narratorPopupInfo.y - (popupHeight || 0) - 20}px;"
     >
       <div class="popup-content">
@@ -28,14 +70,21 @@
     </div>
   {/key}
 {/if}
+
 <style>
   .popup-container {
     position: absolute;
     transform: translateX(-50%);
     z-index: 100;
-    /* pointer-events: auto; */
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
   }
+
+  .popup-container.visible {
+    opacity: 1;
+  }
+
   .popup-content {
     background: var(--narratorpopupbg);
     color: var(--popuptext);
@@ -49,6 +98,7 @@
     font-size: 15px;
     position: relative;
   }
+
   .popup-content::after {
     content: "";
     position: absolute;
@@ -59,25 +109,25 @@
     border-style: solid;
     border-color: var(--narratorpopupbg) transparent transparent transparent;
   }
+
   .popup-content :global(h1) {
     margin: 0 0 0px 0;
-    /* font-size: 1.4em; */
-    /* font-weight: 600; */
     font-size: 20px;
-    /* font-weight: bold; */
-    /* font-family: var(--sans); */
     font-family: var(--handwriting);
   }
+
   .popup-content :global(.byline) {
     font-size: 1em;
     margin-top: -10px;
     color: #999;
   }
+
   .popup-content :global(a) {
     color: var(--hlcolor);
     text-decoration: none;
-        pointer-events: auto;
+    pointer-events: auto;
   }
+
   .popup-content :global(a:hover) {
     text-decoration: underline;
   }

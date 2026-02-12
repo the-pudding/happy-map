@@ -254,9 +254,9 @@
     border: 2px solid var(--viewportbox);
     box-shadow: 0 0 0 1px rgba(255,255,255,0.5);
 
-    background-image:
+/*     background-image:
       repeating-linear-gradient(45deg, var(--compasscrosshatch) 0px, var(--compasscrosshatch) 2px, transparent 2px, transparent 8px),
-      repeating-linear-gradient(-60deg, var(--compasscrosshatch) 0px, var(--compasscrosshatch) 1px, transparent 1px, transparent 6px);
+      repeating-linear-gradient(-60deg, var(--compasscrosshatch) 0px, var(--compasscrosshatch) 1px, transparent 1px, transparent 6px); */
   }
 
  /* Tablet / Small Laptop: Move to top-right */

@@ -4,7 +4,7 @@
   import { onMount, onDestroy } from "svelte";
 
   let { introStage, onStep } = $props();
-  const isExploreMode = $derived(introStage >= copy.story.length);
+  const isExploreMode = $derived(introStage >= copy.story.length-1);
 
   let hasHover = $state(false);
 

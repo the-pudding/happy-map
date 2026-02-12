@@ -16,7 +16,6 @@
   let storyActiveIndex = $state(-1);
   let popupInfo = $state(null);
   let filters = $state(structuredClone(DEFAULT_FILTERS));
-
   // --- NEW: Loading State ---
   let isLoading = $state(true);
 
@@ -210,14 +209,30 @@
 
 <style>
   .wrapper {
-    position: absolute;
-    bottom: 0;
+    position: fixed;
+    top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background-color: #1e3d54;
     z-index: 1;
     overflow: hidden;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: none;
+  }
+
+  /* Prevent body scrolling and overscroll */
+  :global(html, body) {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: none;
   }
 
   /* LOADING STYLES */
