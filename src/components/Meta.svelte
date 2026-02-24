@@ -2,7 +2,7 @@
 	let {
 		title = "Happy map",
 		description = "100,000 moments of human happiness, mapped",
-		url = "https://pudding.cool/2026/01/happy-map",
+		url = "https://pudding.cool/2026/02/happy-map",
 		keywords = "Happy Map, HappyDB visualization, map of happiness, global happiness data, Alvin Chang, interactive data visualization, crowdsourced happy moments, mapping human emotion",
 		preloadFont = []
 	} = $props();
