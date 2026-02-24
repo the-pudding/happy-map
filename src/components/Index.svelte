@@ -9,6 +9,7 @@
 	import { getContext } from "svelte";
 	import Footer from "$components/Footer.svelte";
 	import HappyMap from "$components/happy-map/Main.happymap.svelte";
+	import Tip from "$components/helpers/Tip.svelte";
 
 	// const copy = getContext("copy");
 	// const data = getContext("data");
@@ -16,5 +17,17 @@
 
 <svelte:boundary onerror={(e) => console.error(e)}>
 	<HappyMap />
+	<div class="tip-wrapper">
+		<Tip />
+	</div>
 	<!-- <Footer recirc={true} /> -->
 </svelte:boundary>
+
+<style>
+	.tip-wrapper {
+		position: fixed;
+		top: 4rem;
+		left: 0.5rem;
+		z-index: var(--z-overlay);
+	}
+</style>
