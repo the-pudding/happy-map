@@ -109,6 +109,7 @@
     color: var(--buttontext);
     background: var(--buttonbg);
     border: var(--buttonborder);
+    border-bottom: none;
     border-radius: 20px 20px 0 0;
     cursor: pointer;
     opacity: 1;
